@@ -1,0 +1,156 @@
+---
+title: "Quality Control for MxIF"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+    toc: true
+    toc_float: true
+  pdf_document: default
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(ggplot2)
+library(data.table)
+library(dplyr)
+set.seed(123)
+
+quantfile <- commandArgs(trailingOnly=T)[1]
+roi <- tools::file_path_sans_ext(basename(quantfile))
+configs_path <- commandArgs(trailingOnly=T)[2]
+```
+
+```{r}
+## File paths
+configs <- fread(configs_path)
+
+cluster_outfile <- paste0("clusters_", roi, ".csv")
+
+# QC parameters
+sigsum_quantile_high <- as.numeric(configs$value[configs$object == "sigsum_quantile_high"])
+sigsum_quantile_low <- as.numeric(configs$value[configs$object == "sigsum_quantile_low"])
+bin_size <- as.numeric(configs$value[configs$object == "bin_size"])
+density_cutoff <- as.numeric(configs$value[configs$object == "density_cutoff"])
+allmarkers_outfile <- paste0("all_markers_clean_", roi, ".csv")
+```
+
+# ROI: `r roi`
+
+# QC 
+
+There are two main quality control steps:
+
+1. SigSum: filtering outlier cells based on the sum of all marker signals per cell.
+    - Cutoff: remove cells above the 99th percentile and below the 5th percentile
+    
+1. Low density cells
+    - Remove "lonely" cells in low-density regions
+
+```{r}
+# Read in data
+roi_df <- fread(quantfile)
+
+# Reformat column names
+if (length(grep("Cell:", colnames(roi_df))) == 0) {
+  colnames(roi_df) <- sub(": ", ": Cell: ", colnames(roi_df)) # Insert "Cell:" into the column names for the marker genes for Seurat
+}
+
+colnames(roi_df) <- sub("\u00B5", "u", colnames(roi_df)) # replace mu with u
+```
+
+## Sigsum check
+```{r}
+# Extract the means for each marker
+means_only_df <- roi_df %>% select(contains("Cell: Mean"))
+
+# Get sum of all signals for each cell
+means_only_df$sigsum <- rowSums(means_only_df)
+
+# Calculate percentile cutoffs
+sigsum_cutpoint_1 <- quantile(means_only_df$sigsum, sigsum_quantile_high)
+sigsum_cutpoint_2 <- quantile(means_only_df$sigsum, sigsum_quantile_low)
+
+# Add metric to df
+roi_df$sigsum_metric = "Cell"
+roi_df$sigsum_metric[means_only_df$sigsum > sigsum_cutpoint_1] <- "SIGSUM High"
+roi_df$sigsum_metric[means_only_df$sigsum < sigsum_cutpoint_2] <- "SIGSUM Low"
+roi_df$sigsum <- means_only_df$sigsum
+
+n_sigsum_high = sum(roi_df$sigsum_metric == "SIGSUM High")
+pct_sigsum_high = n_sigsum_high/nrow(roi_df)
+n_sigsum_low = sum(roi_df$sigsum_metric == "SIGSUM Low")
+pct_sigsum_low = n_sigsum_low/nrow(roi_df)
+```
+
+#### Cells flagged for high sigsum: `r n_sigsum_high` (`r round(pct_sigsum_high*100, 2)`%)
+
+#### Cells flagged for low sigsum: `r n_sigsum_low` (`r round(pct_sigsum_low*100, 2)`%)
+
+```{r}
+# Plot distribution of sigsums with cutoffs
+ggplot(data = means_only_df, aes(x = sigsum)) +
+  geom_histogram() +
+  theme_bw() +
+  geom_vline(aes(xintercept = sigsum_cutpoint_1)) +
+  geom_vline(aes(xintercept = sigsum_cutpoint_2))
+```
+
+
+## Bin density
+```{r}
+# Calculate bins for cell density
+roi_df$binX <- floor(roi_df$`Centroid X`/bin_size)
+roi_df$binY <- floor(roi_df$`Centroid Y`/bin_size)
+
+# Count cells in each bin
+bincounts <- roi_df %>% count(binX, binY) %>% rename(bin_density = n)
+
+# Add bin density metric to df
+roi_df <- roi_df %>% inner_join(bincounts) %>% mutate(low_bin_density = bin_density <= density_cutoff)
+
+n_lowdensity = sum(roi_df$bin_density <= density_cutoff)
+pct_lowdensity = n_lowdensity/nrow(roi_df)
+```
+
+#### Cells flagged for low density: `r n_lowdensity` (`r round(pct_lowdensity*100, 2)`%)
+
+```{r}
+# Plot cells with low density
+ggplot(roi_df, aes(x = roi_df$`Centroid X`, y = roi_df$`Centroid Y`, fill = roi_df$low_bin_density)) +
+  geom_point(pch=21,colour="white") +
+  labs(x = "Centroid X", y = "Centroid Y", fill = "Low bin density") +
+  theme_minimal()
+```
+
+
+```{r}
+## Instead of filtering, mark as artifacts here, and filter in clustering script
+roi_df$qc <- "Cell"
+roi_df$qc[(roi_df$sigsum > sigsum_cutpoint_1) | (roi_df$sigsum < sigsum_cutpoint_2)] <- "Artifact"
+roi_df$qc[roi_df$bin_density <= density_cutoff] <- "Artifact"
+roi_df$roi <- roi
+
+cols_keep <- c("Image", "Name", "roi", "Class", "Parent", # Add object ID back in
+               "Centroid X um", "Centroid Y um",
+               "sigsum_metric", "sigsum", "qc", "binX", "binY", "bin_density", 
+               "low_bin_density")
+
+roi_df <- roi_df %>% select(all_of(cols_keep), contains("Cell:"))
+fwrite(roi_df, allmarkers_outfile)
+```
+

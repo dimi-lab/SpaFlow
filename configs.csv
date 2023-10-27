@@ -1,0 +1,9 @@
+object,value
+sigsum_quantile_high,0.99
+sigsum_quantile_low,0.05
+bin_size,50
+density_cutoff,5
+cluster_metric,Median
+min_clusters,6
+min_metaclusters,5
+max_metaclusters,10
