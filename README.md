@@ -24,6 +24,8 @@
 
 ## Instructions
 
+Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantification files) generated from segmented single cell MxIF images.
+
 1.  Clone repository to your machine
 2.  Place quantification files in `data` directory
     i.  Files should be in the format `<fov_name>.tsv` or `<fov_name>.csv` (e.g. `region_001.tsv`)
@@ -35,7 +37,6 @@
 ------------------------------------------------------------------------
 
 ### Configurable parameters
-
 
 | object               | value                                                                   |
 |------------------------------------|------------------------------------|
@@ -74,3 +75,11 @@
     -   Marker vs metacluster heatmaps; barplots for proportion of ROI per metacluster
 -   \<roi_name\>\_mapped_metaclusters_n\_metaclusters.csv
     -   Clusters and metaclusters mapped to cell coordinates - includes artifacts
+
+------------------------------------------------------------------------
+
+## Example Data
+
+Within the data directory of this repository, there is a sample dataset with four quantification files generated using images from the [Multiplexed Imaging Mass Cytometry of Chemokine Milieus in Metastatic Melanoma](https://zenodo.org/records/6004986) dataset (Hoch et al. 2022). The templates for configs.csv and marker_configs.csv have been set up for this dataset, therefore you can run a test of the pipeline by cloning the repo, unzipping the files into the data directory, and running `nextflow run main.nf` from the top-level directory.
+
+Hoch, T., Schulz, D., Eling, N., Martínez-Gómez, J., Levesque, M., & Bodenmiller, B. (2022). Multiplexed Imaging Mass Cytometry of Chemokine Milieus in Metastatic Melanoma - Raw Data. <https://doi.org/10.5281/zenodo.6004986>
