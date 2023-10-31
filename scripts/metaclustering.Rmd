@@ -48,6 +48,8 @@ cluster_files <- sort(unlist(strsplit(params$clusters_collected, ",")))
 configs <- fread(params$configs_path)
 marker_configs <- fread(params$marker_configs_path)
 
+roi_df <- fread(allmarker_files[1])
+
 
 # n_metaclusters <- as.numeric(configs$value[configs$object == "n_metaclusters"])
 min_metaclusters <- as.numeric(configs$value[configs$object == "min_metaclusters"])
@@ -58,7 +60,7 @@ metacluster_range <- min_metaclusters:max_metaclusters
 default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
 
 ## Choose markers for clustering
-if(nrow(marker_configs) > 0) {
+if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- marker_configs$marker
 } else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- default_markers

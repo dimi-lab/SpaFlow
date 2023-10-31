@@ -51,6 +51,7 @@ marker_configs_path <- commandArgs(trailingOnly=T)[3]
 ## File paths
 configs <- fread(configs_path)
 marker_configs <- fread(marker_configs_path)
+roi_df <- fread(allmarkers_outfile)
 
 # Clustering parameters
 cluster_metric <- configs$value[configs$object == "cluster_metric"]
@@ -61,7 +62,7 @@ cluster_outfile <- paste0("clusters_", roi, ".csv")
 default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
 
 ## Choose markers for clustering
-if(nrow(marker_configs) > 0) {
+if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- marker_configs$marker
 } else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- default_markers
@@ -348,8 +349,7 @@ plot_avg_heatmap <- function(codex.obj, all_markers = FALSE, order_manual = FALS
 
 ```{r}
 # Save all coordinates for later
-all_coords <- fread(allmarkers_outfile)
-all_coords <- all_coords  %>% select(roi, `Centroid X um`, `Centroid Y um`)
+all_coords <- roi_df  %>% select(roi, `Centroid X um`, `Centroid Y um`)
 ```
 
 
