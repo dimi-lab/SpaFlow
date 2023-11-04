@@ -2,7 +2,7 @@
 
 Pipeline visualized below
 
-<img src="lynnlangit/mxif_clustering_pipeline/images/mxif-pipeline.png" width=1000>
+<img src="https://github.com/lynnlangit/mxif_clustering_pipeline/blob/diagram/images/mxif-pipeline.png" width=1000>
 
 ## Requirements/Dependencies
 
