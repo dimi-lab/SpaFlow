@@ -1,5 +1,9 @@
 # Nextflow Pipeline for QC and Clustering of MxIF Datasets
 
+Pipeline visualized below
+
+<img src="https://github.com/lynnlangit/mxif_clustering_pipeline/blob/diagram/images/mxif-pipeline.png" width=1000>
+
 ## Requirements/Dependencies
 
 -   Nextflow 23.04.2
