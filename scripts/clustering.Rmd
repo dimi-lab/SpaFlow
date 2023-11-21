@@ -374,7 +374,7 @@ plot(tree)
 
 ```{r}
 treedata <- tree$data
-tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% filter(n_cluster > min_clusters)
+tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% filter(n_cluster >= min_clusters)
 clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$sc3_sd)]))
 if(length(clustering_res) > 1) clustering_res <- clustering_res[1]
 
