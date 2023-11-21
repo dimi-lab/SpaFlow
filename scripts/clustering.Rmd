@@ -36,7 +36,6 @@ library(ggridges)
 library(clustree)
 set.seed(123)
 
-
 allmarkers_outfile <- commandArgs(trailingOnly=T)[1]
 roi <- tools::file_path_sans_ext(basename(allmarkers_outfile))
 roi <- sub("all_markers_clean_", "", roi)
@@ -376,24 +375,49 @@ plot(tree)
 
 ```{r}
 treedata <- tree$data
-tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% filter(n_cluster >= min_clusters)
-clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$sc3_sd)]))
-if(length(clustering_res) > 1) clustering_res <- clustering_res[1]
+tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) 
 
-final_nclust <- tree_summary$n_cluster[which.max(tree_summary$sc3_sd)]
-
-treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
-
-tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
-kable(tree_summary, align = "r")
-
-ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2) +
-  theme_bw() +
-  xlab("Resolution") +
-  ylab("Cells per cluster") +
-  ggtitle("Distribution of cluster sizes per resolution")
+if (any(tree_summary$n_cluster >= min_clusters)) {
+  tree_summary <- tree_summary %>% filter(n_cluster >= min_clusters)
+  
+  clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$sc3_sd)]))
+  if(length(clustering_res) > 1) clustering_res <- clustering_res[1]
+  
+  final_nclust <- tree_summary$n_cluster[which.max(tree_summary$sc3_sd)]
+  
+  treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
+  
+  tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+  kable(tree_summary, align = "r")
+  
+  ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+    geom_boxplot() +
+    geom_jitter(width = 0.2) +
+    theme_bw() +
+    xlab("Resolution") +
+    ylab("Cells per cluster") +
+    ggtitle("Distribution of cluster sizes per resolution")
+} else {
+  
+  clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$n_cluster)]))
+  
+  final_nclust <- max(tree_summary$n_cluster)
+  
+  treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
+  
+  tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+  kable(tree_summary, align = "r")
+  
+  print(paste0("WARNING: None of the searched resolutions (0.1-1.9) produced the minimum number of clusters (", min_clusters, ") specified in configs.csv. You may need to reduce n_clusters in configs.csv. Continuing with resolution ", clustering_res, ", which produces ", final_nclust, " clusters."))
+  
+  ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+    geom_boxplot() +
+    geom_jitter(width = 0.2) +
+    theme_bw() +
+    xlab("Resolution") +
+    ylab("Cells per cluster") +
+    ggtitle("Distribution of cluster sizes per resolution")
+}
 ```
 
 ## Final clustering: resolution `r clustering_res`,  `r final_nclust` clusters
@@ -406,7 +430,6 @@ clusters_out <- codex.obj@meta.data %>% select(seurat_clusters)
 clusters_out <- cbind(clusters_out, GetTissueCoordinates(codex.obj, image = img_title))
 clusters_out$seurat_clusters <- paste0("cluster_", clusters_out$seurat_clusters)
 
-colnames(all_coords)
 clusters_out <- left_join(all_coords, clusters_out, by = c("x", "y")) %>%
   select(x, y, seurat_clusters)
 
