@@ -84,6 +84,7 @@ zscorenorm <- function(marker) {
 
 get_normalized_counts <- function(roi_allmarkers) {
   counts <- fread(roi_allmarkers)
+  counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"))
   counts <- counts %>% select(roi, all_of(setdiff(colnames(.), "roi"))) %>% select(-contains("DAPI"))
 
   cols <- grep("Median", colnames(counts), value = T)
@@ -101,7 +102,7 @@ get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
   roi <- clusters$roi[1]
   
   cluster_medians <- 
-    inner_join(clusters, normcounts, by = c("x" = "Centroid X um", "y" = "Centroid Y um", "roi" = "roi")) %>% 
+    inner_join(clusters, normcounts, by = c("x", "y", "roi")) %>% 
     filter(seurat_clusters != "Artifact") %>%
     select(x, y, roi, seurat_clusters, all_of(paste0(markers_selected, ": Cell: Median"))) %>% 
     group_by(seurat_clusters) %>% 
