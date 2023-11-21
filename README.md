@@ -34,8 +34,8 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 2.  Place quantification files in `data` directory
     i.  Files should be in the format `<fov_name>.tsv` or `<fov_name>.csv` (e.g. `region_001.tsv`)
 3.  Adjust configuration values in `configs.csv`
-4.  Add desired markers to `marker_confings.csv`
-    i.  If markers are not provided, the quantification file will search for a default list of markers; if all default markers are not present, all markers in the dataset will be used, excluding DAPI.
+4.  Add desired markers to `marker_confings.csv` - all markers provided must be present in the dataset
+    i.  If markers are not provided or if all markers provided are not present in the dataset, the quantification file will search for a default list of markers; if all default markers are not present, all markers in the dataset will be used, excluding DAPI.
 5.  Call main pipeline script: `nextflow run main.nf`
     i.  By default, all three steps will run (QC, clustering, metaclustering). It is a good idea to first run the QC by itself by using the `--qc_only` flag. If you want to run both the QC and clustering steps, use `--qc_and_cluster`.
 
