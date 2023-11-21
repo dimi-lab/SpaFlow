@@ -349,7 +349,9 @@ plot_avg_heatmap <- function(codex.obj, all_markers = FALSE, order_manual = FALS
 
 ```{r}
 # Save all coordinates for later
-all_coords <- roi_df  %>% select(roi, `Centroid X um`, `Centroid Y um`)
+all_coords <- roi_df  %>% select(roi, contains(c("Centroid X", "Centroid Y")))
+colnames(all_coords)[grepl("Centroid X", colnames(all_coords))] <- "x"
+colnames(all_coords)[grepl("Centroid Y", colnames(all_coords))] <- "y"
 ```
 
 
@@ -404,8 +406,9 @@ clusters_out <- codex.obj@meta.data %>% select(seurat_clusters)
 clusters_out <- cbind(clusters_out, GetTissueCoordinates(codex.obj, image = img_title))
 clusters_out$seurat_clusters <- paste0("cluster_", clusters_out$seurat_clusters)
 
-clusters_out <- left_join(all_coords, clusters_out, by = c("Centroid X um" = "x", "Centroid Y um" = "y")) %>%
-  select("x" = "Centroid X um", "y" = "Centroid Y um", seurat_clusters)
+colnames(all_coords)
+clusters_out <- left_join(all_coords, clusters_out, by = c("x", "y")) %>%
+  select(x, y, seurat_clusters)
 
 clusters_out$seurat_clusters[is.na(clusters_out$seurat_clusters)] <- "Artifact"
 clusters_out$roi <- roi
