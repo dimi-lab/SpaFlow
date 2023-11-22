@@ -66,11 +66,7 @@ process RUNMETACLUSTERS {
   script:
   """
   Rscript -e "rmarkdown::render('${metascript}', 
-                                output_file='metacluster_report.html', 
-                                params = list(allmarkers_collected='${allmarkers_collected.join(",")}',
-                                              clusters_collected='${clusters_collected.join(",")}',
-                                              configs_path='${configs}',
-                                              marker_configs_path = '${marker_configs}'))"
+                                output_file='metacluster_report.html')"
   """
   
 }

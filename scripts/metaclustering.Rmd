@@ -1,11 +1,6 @@
 ---
 title: "Metaclustering for MxIF"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-params:
-  allmarkers_collected: ""
-  clusters_collected: ""
-  configs_path: ""
-  marker_configs_path: ""
 output:
   html_document:
     code_folding: hide
@@ -43,10 +38,10 @@ set.seed(123)
 Be sure to check the distribution of ROIs across metaclusters to verify that the ROIs are approximately evenly represented within the metaclusters. Unbalanced ROI proportions indicate unresolved batch effects between ROIs.
 
 ```{r}
-allmarker_files <- sort(unlist(strsplit(params$allmarkers_collected, ",")))
-cluster_files <- sort(unlist(strsplit(params$clusters_collected, ",")))
-configs <- fread(params$configs_path)
-marker_configs <- fread(params$marker_configs_path)
+allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
+cluster_files <- list.files('.', pattern = "^clusters_.*.csv", full.names = T)
+configs <- fread("configs.csv")
+marker_configs <- fread("marker_configs.csv")
 
 roi_df <- fread(allmarker_files[1])
 
