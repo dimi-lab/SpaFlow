@@ -180,7 +180,6 @@ for (i in seq_along(metacluster_range)) {
   
   p <- ggplot(meta_orig_tab, aes(x = factor(metacluster, levels = as.character(1:n_metaclusters)), y = Freq, fill = ROI)) +
     geom_bar(position="fill", stat="identity") +
-    # geom_text(data = combined_counts_by_roi[combined_counts_by_roi$Freq != 0,], mapping = aes(label = `Functional Markers`), position = position_stack(vjust = 0.5), size = 3) +
     theme_bw() +
     xlab("metacluster")
   

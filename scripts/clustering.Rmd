@@ -56,6 +56,13 @@ roi_df <- fread(allmarkers_outfile)
 cluster_metric <- configs$value[configs$object == "cluster_metric"]
 min_clusters <- as.numeric(configs$value[configs$object == "min_clusters"])
 cluster_outfile <- paste0("clusters_", roi, ".csv")
+if ("clustering_res" %in% configs$object && !is.na(configs$value[configs$object == "clustering_res"])) {
+  clustering_res <- as.numeric(configs$value[configs$object == "clustering_res"])
+} else {
+  min_res <- as.numeric(configs$value[configs$object == "min_res"])
+  max_res <- as.numeric(configs$value[configs$object == "max_res"])
+  res_step <- as.numeric(configs$value[configs$object == "res_step"])
+}
 
 # Default marker set
 default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
@@ -361,62 +368,65 @@ codex.obj <- subset(codex.obj, subset = qc != "Artifact")
 codex.obj <- normalize_and_reduce(codex.obj)
 ```
 
-## Clustree
+## Clustering resolution
 
-Clustree is used to help determine what clustering resolution should be used. Resolutions producing stable clusters (clusters which maintain more of the same cells across resolutions) are desirable.
+If clustering resolution is not provided manually, clustree is used to help determine what clustering resolution should be used. Resolutions producing stable clusters (clusters which maintain more of the same cells across resolutions) are desirable.
 
 ```{r fig.height=10, fig.width = 8}
 codex.obj <- FindNeighbors(object = codex.obj, dims = c(1:ncol(Embeddings(codex.obj, reduction = "pca"))), verbose = FALSE)
-codex.obj <- FindClusters(object = codex.obj, verbose = FALSE, resolution = seq(0.1,1.9,0.2), n.start = 1)
 
-tree <- clustree(codex.obj, prefix = "Akoya_snn_res.")
-plot(tree)
-```
-
-```{r}
-treedata <- tree$data
-tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) 
-
-if (any(tree_summary$n_cluster >= min_clusters)) {
-  tree_summary <- tree_summary %>% filter(n_cluster >= min_clusters)
+if (!"clustering_res" %in% configs$object || is.na(configs$value[configs$object == "clustering_res"])) {
+  codex.obj <- FindClusters(object = codex.obj, verbose = FALSE, resolution = seq(min_res,max_res,res_step), n.start = 1)
+  tree <- clustree(codex.obj, prefix = "Akoya_snn_res.")
+  plot(tree)
   
-  clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$sc3_sd)]))
-  if(length(clustering_res) > 1) clustering_res <- clustering_res[1]
+  treedata <- tree$data
+  tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) 
   
-  final_nclust <- tree_summary$n_cluster[which.max(tree_summary$sc3_sd)]
-  
-  treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
-  
-  tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
-  kable(tree_summary, align = "r")
-  
-  ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
-    geom_boxplot() +
-    geom_jitter(width = 0.2) +
-    theme_bw() +
-    xlab("Resolution") +
-    ylab("Cells per cluster") +
-    ggtitle("Distribution of cluster sizes per resolution")
+  if (any(tree_summary$n_cluster >= min_clusters)) {
+    tree_summary <- tree_summary %>% filter(n_cluster >= min_clusters)
+    
+    clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$sc3_sd)]))
+    if(length(clustering_res) > 1) clustering_res <- clustering_res[1]
+    
+    final_nclust <- tree_summary$n_cluster[which.max(tree_summary$sc3_sd)]
+    
+    treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
+    
+    tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+    kable(tree_summary, align = "r")
+    
+    ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+      geom_boxplot() +
+      geom_jitter(width = 0.2) +
+      theme_bw() +
+      xlab("Resolution") +
+      ylab("Cells per cluster") +
+      ggtitle("Distribution of cluster sizes per resolution")
+  } else {
+    
+    clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$n_cluster)]))
+    
+    final_nclust <- max(tree_summary$n_cluster)
+    
+    treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
+    
+    tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+    kable(tree_summary, align = "r")
+    
+    print(paste0("WARNING: None of the searched resolutions (0.1-1.9) produced the minimum number of clusters (", min_clusters, ") specified in configs.csv. You may need to reduce n_clusters in configs.csv. Continuing with resolution ", clustering_res, ", which produces ", final_nclust, " clusters."))
+    
+    ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+      geom_boxplot() +
+      geom_jitter(width = 0.2) +
+      theme_bw() +
+      xlab("Resolution") +
+      ylab("Cells per cluster") +
+      ggtitle("Distribution of cluster sizes per resolution")
+  }
 } else {
-  
-  clustering_res <- as.numeric(as.character(tree_summary$Akoya_snn_res.[which.max(tree_summary$n_cluster)]))
-  
-  final_nclust <- max(tree_summary$n_cluster)
-  
-  treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
-  
-  tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
-  kable(tree_summary, align = "r")
-  
-  print(paste0("WARNING: None of the searched resolutions (0.1-1.9) produced the minimum number of clusters (", min_clusters, ") specified in configs.csv. You may need to reduce n_clusters in configs.csv. Continuing with resolution ", clustering_res, ", which produces ", final_nclust, " clusters."))
-  
-  ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
-    geom_boxplot() +
-    geom_jitter(width = 0.2) +
-    theme_bw() +
-    xlab("Resolution") +
-    ylab("Cells per cluster") +
-    ggtitle("Distribution of cluster sizes per resolution")
+  codex.obj <- FindClusters(object = codex.obj, verbose = FALSE, resolution = clustering_res, n.start = 1)
+  final_nclust <- length(unique(codex.obj$seurat_clusters))
 }
 ```
 
