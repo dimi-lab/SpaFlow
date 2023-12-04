@@ -134,6 +134,7 @@ pct_lowdensity = n_lowdensity/nrow(roi_df)
 ggplot(roi_df, aes(x = roi_df$`Centroid X`, y = roi_df$`Centroid Y`, fill = roi_df$low_bin_density)) +
   geom_point(pch=21,colour="white") +
   labs(x = "Centroid X", y = "Centroid Y", fill = "Low bin density") +
+  scale_y_reverse() +
   theme_minimal()
 ```
 

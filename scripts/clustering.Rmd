@@ -449,7 +449,7 @@ clusters_out$roi <- roi
 fwrite(clusters_out, cluster_outfile)
 
 p1 <- DimPlot(codex.obj, label = T) + NoLegend()
-p2 <- ImageDimPlot(codex.obj)
+p2 <- ImageDimPlot(codex.obj, flip_xy = FALSE) + scale_x_reverse()
 p1 + p2
 ```
 
