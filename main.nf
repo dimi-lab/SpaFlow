@@ -2,10 +2,12 @@
 
 params.configfile = "${projectDir}/configs.csv"
 params.markerconfigfile = "${projectDir}/marker_configs.csv"
+params.celesta_prior_matrix = "${projectDir}/celesta_prior_matrix.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
 params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
 params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
-params.clusterscript = "${projectDir}/scripts/clustering.Rmd"
+params.clusterscript = "${projectDir}/scripts/seurat_clustering.Rmd"
+params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
 params.data_pattern = "${projectDir}/data/*.[tc]sv"
 
@@ -68,7 +70,7 @@ process COLLECTSIGSUM {
   """  
 }
 
-process RUNCLUSTERS {
+process RUNSEURAT {
   maxForks 10
 
   publishDir 'output_reports', pattern: "*.html"
@@ -82,13 +84,37 @@ process RUNCLUSTERS {
   
   output:
   path "clustering_report_${roi}.html"
-  path "clusters_${roi}.csv", emit: clusters
+  path "seurat_clusters_${roi}.csv", emit: clusters
     
   script:
   roi = all_markers.baseName.replace("all_markers_clean_", "")
   
   """
   Rscript -e "rmarkdown::render('${clustering_script}', output_file='clustering_report_${roi}.html')" $all_markers $configs $marker_configs
+  """
+}
+
+process RUNCELESTA {
+  maxForks 10
+
+  publishDir 'output_reports', pattern: "*.html"
+  publishDir 'output_tables', pattern: "*.csv"
+  
+  input:
+  path celesta_script
+  path all_markers
+  path configs
+  path celesta_prior_matrix
+  
+  output:
+  path "celesta_report_${roi}.html"
+  path "CELESTA_classes_${roi}.csv", emit: clusters
+    
+  script:
+  roi = all_markers.baseName.replace("all_markers_clean_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${celesta_script}', output_file='celesta_report_${roi}.html')" $all_markers $configs
   """
 }
 
@@ -127,11 +153,12 @@ workflow {
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
 	if (params.qc_and_cluster || !params.qc_only) {
-	  RUNCLUSTERS(params.clusterscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	  RUNSEURAT(params.clusterscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	  RUNCELESTA(params.celestascript, RUNQC.output.all_markers, params.configfile, params.celesta_prior_matrix)
 	}
 	
 	if (!params.qc_and_cluster & !params.qc_only) {
-	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNCLUSTERS.output.clusters.collect())
+	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.clusters.collect())
 	}	
 }
 

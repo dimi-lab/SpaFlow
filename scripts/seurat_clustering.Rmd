@@ -55,7 +55,7 @@ roi_df <- fread(allmarkers_outfile)
 # Clustering parameters
 cluster_metric <- configs$value[configs$object == "cluster_metric"]
 min_clusters <- as.numeric(configs$value[configs$object == "min_clusters"])
-cluster_outfile <- paste0("clusters_", roi, ".csv")
+cluster_outfile <- paste0("seurat_clusters_", roi, ".csv")
 if ("clustering_res" %in% configs$object && !is.na(configs$value[configs$object == "clustering_res"])) {
   clustering_res <- as.numeric(configs$value[configs$object == "clustering_res"])
 } else {

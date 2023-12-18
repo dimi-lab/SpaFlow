@@ -39,7 +39,7 @@ Be sure to check the distribution of ROIs across metaclusters to verify that the
 
 ```{r}
 allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
-cluster_files <- list.files('.', pattern = "^clusters_.*.csv", full.names = T)
+cluster_files <- list.files('.', pattern = "^seurat_clusters_.*.csv", full.names = T)
 configs <- fread("configs.csv")
 marker_configs <- fread("marker_configs.csv")
 

@@ -1,0 +1,144 @@
+---
+title: "CELESTA clustering for MxIF"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+    toc: true
+    toc_float: true
+  pdf_document: default
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(CELESTA)
+library(Rmixmod)
+library(spdep)
+library(ggplot2)
+library(reshape2)
+library(zeallot)
+library(data.table)
+library(dplyr)
+```
+
+```{r}
+allmarkers_outfile <- commandArgs(trailingOnly=T)[1]
+roi <- tools::file_path_sans_ext(basename(allmarkers_outfile))
+roi <- sub("all_markers_clean_", "", roi)
+configs_path <- commandArgs(trailingOnly=T)[2]
+
+
+# allmarkers_outfile <- "output_tables/all_markers_clean_reg002.csv"
+# roi <- tools::file_path_sans_ext(basename(allmarkers_outfile))
+# roi <- sub("all_markers_clean_", "", roi)
+# configs_path <- "configs.csv"
+```
+
+
+```{r}
+prior_marker_info <- fread('celesta_prior_matrix.csv')
+
+anchor_high <- prior_marker_info$anchor
+index_high <- prior_marker_info$index
+
+prior_marker_info <- prior_marker_info %>% dplyr::select(-anchor, -index)
+```
+
+```{r}
+imaging_data <- fread(allmarkers_outfile)
+colnames(imaging_data) <- sub("\u00B5", "u", colnames(imaging_data))
+imaging_data <- imaging_data %>% filter(qc == "Cell") %>% select(X = `Centroid X um`, Y = `Centroid Y um`, contains("Cell: Median"))
+
+colnames(imaging_data) <- sapply(colnames(imaging_data), function(x) sub(": Cell: Median", "", x))
+
+marker_cols <- colnames(prior_marker_info)[3:ncol(prior_marker_info)]
+imaging_data <- imaging_data %>% select("X", "Y", all_of(marker_cols))
+
+CelestaObj <- CreateCelestaObject(project_title = "CELESTA", prior_marker_info, imaging_data)
+```
+
+
+```{r}
+p <- PlotExpProb(coords=CelestaObj@coords,
+            marker_exp_prob=CelestaObj@marker_exp_prob,
+            prior_marker_info = prior_marker_info,
+            save_plot = FALSE) +
+  ggplot2::scale_y_reverse()
+```
+
+```{r}
+## Recreate CELESTA's PlotExpProb but show all plots
+palette <- colorRampPalette(colors = c("white", "blue4"))
+cols <- palette(6)
+markers_to_check <- as.character(
+  colnames(prior_marker_info)[3:dim(prior_marker_info)[2]]
+)
+for (i in 1:length(markers_to_check)) {
+  g <- PlotSingleExpProb(
+    coords=CelestaObj@coords,
+    marker_exp_prob=CelestaObj@marker_exp_prob,
+    cols=cols,
+    marker_to_use=markers_to_check[i],
+    size_to_use = 1,
+    width_to_use = 5,
+    height_to_use = 4
+  )
+  plot(g)
+}
+```
+
+
+
+
+```{r}
+CelestaObj <- AssignCells(CelestaObj,max_iteration=10,cell_change_threshold=0.01,
+                          high_expression_threshold_anchor=anchor_high,
+                          low_expression_threshold_anchor=low_marker_threshold_anchor,
+                          high_expression_threshold_index=index_high,
+                          low_expression_threshold_index=low_marker_threshold_iteration)
+```
+
+```{r}
+celltypes <- CelestaObj@final_cell_type_assignment %>% as.data.frame()
+celltypes <- cbind(imaging_data[,1:2], celltypes) %>% rename(x = X, y = Y)
+fwrite(celltypes, paste0("CELESTA_classes_", roi, ".csv"))
+
+as.data.frame(table(celltypes$`Final cell type`)) %>% rename("Cell Type" = Var1)
+```
+
+
+```{r}
+PlotCellsAnyCombination(cell_type_assignment_to_plot=CelestaObj@final_cell_type_assignment[,(CelestaObj@total_rounds+1)],
+                        coords = CelestaObj@coords,
+                        prior_info = prior_marker_info,
+                        cell_number_to_use=c(0,1,2,3,4,5,6,7,8),
+                        cell_type_colors=c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "white"),
+                        test_size=1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
