@@ -3,12 +3,15 @@
 params.configfile = "${projectDir}/configs.csv"
 params.markerconfigfile = "${projectDir}/marker_configs.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
+params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
+params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
 params.clusterscript = "${projectDir}/scripts/clustering.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
 params.data_pattern = "${projectDir}/data/*.[tc]sv"
 
 process RUNQC {
-  publishDir = 'output'
+  maxForks 10
+  publishDir 'output_tables', pattern: "*.csv"
 
   input:
   path quantfile
@@ -17,6 +20,8 @@ process RUNQC {
 
 	output:
 	path "QC_report_${roi}.html"
+	path "bin_density_${roi}.png", emit: bin_density
+	path "sigsum_${roi}.png", emit: sigsum
   path "all_markers_clean_${roi}.csv", emit: all_markers
 	
 	script:
@@ -27,9 +32,48 @@ process RUNQC {
 	"""
 }
 
-process RUNCLUSTERS {
-  publishDir = 'output'
+process COLLECTBINDENSITY {
+  publishDir 'output_reports', pattern: "*.html"
+  
+  input:
+  path collect_bin_density_script
+  path bin_density_collected
+  
+  output:
+  path "bin_density_report.html"
+  
+  script:
+  """
+  Rscript -e "rmarkdown::render('${collect_bin_density_script}', 
+                                  output_file='bin_density_report.html', 
+                                params = list(bin_density_collected='${bin_density_collected.join(",")}'))"
+  """  
+}
 
+process COLLECTSIGSUM {
+  publishDir 'output_reports', pattern: "*.html"
+  
+  input:
+  path collect_sigsum_script
+  path sigsum_collected
+  
+  output:
+  path "sigsum_report.html"
+  
+  script:
+  """
+  Rscript -e "rmarkdown::render('${collect_sigsum_script}', 
+                                  output_file='sigsum_report.html', 
+                                params = list(sigsum_collected='${sigsum_collected.join(",")}'))"
+  """  
+}
+
+process RUNCLUSTERS {
+  maxForks 10
+
+  publishDir 'output_reports', pattern: "*.html"
+  publishDir 'output_tables', pattern: "*.csv"
+  
   input:
   path clustering_script
   path all_markers
@@ -50,7 +94,8 @@ process RUNCLUSTERS {
 
 process RUNMETACLUSTERS {
 
-  publishDir = 'output'
+  publishDir 'output_reports', pattern: "*.html"
+  publishDir 'output_tables', pattern: "*.csv"
   
   input:
   path metascript
@@ -78,6 +123,8 @@ workflow {
   file_ch = Channel.fromPath(params.data_pattern)
   
 	RUNQC(file_ch, params.qcscript, params.configfile)
+	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
+	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
 	if (params.qc_and_cluster || !params.qc_only) {
 	  RUNCLUSTERS(params.clusterscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)

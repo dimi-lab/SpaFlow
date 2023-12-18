@@ -107,7 +107,9 @@ ggplot(data = means_only_df, aes(x = sigsum)) +
   geom_histogram() +
   theme_bw() +
   geom_vline(aes(xintercept = sigsum_cutpoint_1)) +
-  geom_vline(aes(xintercept = sigsum_cutpoint_2))
+  geom_vline(aes(xintercept = sigsum_cutpoint_2)) +
+  ggtitle(roi)
+ggsave(paste0("sigsum_", roi, ".png"), device = "png", dpi = 300, width = 6, height = 5, units = "in")
 ```
 
 
@@ -135,7 +137,9 @@ ggplot(roi_df, aes(x = roi_df$`Centroid X`, y = roi_df$`Centroid Y`, fill = roi_
   geom_point(pch=21,colour="white") +
   labs(x = "Centroid X", y = "Centroid Y", fill = "Low bin density") +
   scale_y_reverse() +
-  theme_minimal()
+  theme_minimal() +
+  ggtitle(roi)
+ggsave(paste0("bin_density_", roi, ".png"), device = "png", dpi = 300, width = 6, height = 5, units = "in")
 ```
 
 

@@ -14,7 +14,7 @@ Pipeline visualized below
     -   ggplot2 3.4.4
     -   data.table 1.14.8
     -   dplyr 1.1.3
-    -   Seurat 4.9.9
+    -   Seurat \>5.0
     -   progressr 0.14.0
     -   kableExtra 1.3.4
     -   ComplexHeatmap 2.15.4
@@ -43,20 +43,20 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 
 ### Configurable parameters
 
-| object               | value                                                                                                     |
-|----------------------|-----------------------------------------------------------------------------------------------------------|
-| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                 |
-| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                 |
-| bin_size             | Size of bounding box for low-density cell search (default 50)                                             |
-| density_cutoff       | Cutoff number of cells defined as low-density (default 5)                                                 |
-| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                      |
-| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. |
-| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                       |
-| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                       |
-| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)       |
-| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                   |
-| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                     |
-| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                      |
+| object               | value                                                                                                                                                     |
+|-----------------|-------------------------------------------------------|
+| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                 |
+| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                 |
+| bin_size             | Size of bounding box for low-density cell search (default 50)                                                                                             |
+| density_cutoff       | Cutoff number of cells defined as low-density (default 5)                                                                                                 |
+| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                                                                      |
+| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. Set to NA or remove row to use clustree method. |
+| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                                                                       |
+| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                                                                       |
+| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)                                                       |
+| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                   |
+| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                     |
+| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                      |
 
 ------------------------------------------------------------------------
 
@@ -64,25 +64,24 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 
 **QC.Rmd**
 
--   QC_report\_\<roi_name\>.html
-    -   One report per ROI
-    -   Includes plots for sigsum cutoffs and bin density flags
-    -   Reports how many cells were flagged by each metric
--   all_markers_clean\_\<roi_name\>.csv
+-   `output_reports/bin_density_report.html` and `output_reports/sigsum_report.html`
+    -   Reports contain one QC image for each ROI
+    -   Plots for sigsum cutoffs and bin density flags
+-   `output_tables/all_markers_clean_<roi_name>.csv`
     -   Quantification file in the same format as input files but with additional columns for QC metrics and QC flags
 
 **clustering.Rmd**
 
--   clustering_report\_\<roi_name\>.html
+-   `output_reports/clustering_report_<roi_name>.html`
     -   Clustree plot, selected resolution, marker vs cluster heatmaps and ridgeplots
--   clusters\_\<roi_name\>.html
+-   `output_tables/clusters_<roi_name>.html`
     -   Clusters mapped to cell coordinates - includes artifacts
 
 **metaclustering.Rmd**
 
--   metaclustering_report.html
+-   `output_reports/metaclustering_report.html`
     -   Marker vs metacluster heatmaps; barplots for proportion of ROI per metacluster
--   \<roi_name\>\_mapped_metaclusters_n\_metaclusters.csv
+-   `output_tables/<roi_name>_mapped_metaclusters_n_metaclusters.csv`
     -   Clusters and metaclusters mapped to cell coordinates - includes artifacts
 
 ------------------------------------------------------------------------
