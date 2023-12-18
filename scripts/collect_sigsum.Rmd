@@ -1,0 +1,46 @@
+---
+title: "Bin Density QC Plots"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+  sigsum_collected: ""
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+  pdf_document: default
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r results='asis'}
+all_sigsum <- sort(unlist(strsplit(params$sigsum_collected, ",")))
+
+# Loop through the list and display images
+for (img_path in all_sigsum) {
+  cat(paste0('<img src="', img_path, '" width="500"/><br>'))
+}
+```
+
+
+
+
+
+
+
+
+
+
+
