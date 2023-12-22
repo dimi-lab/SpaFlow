@@ -1,0 +1,109 @@
+---
+title: "Seurat vs CELESTA"
+output: html_document
+date: "2023-12-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+
+```{r}
+celesta_class_file <- list.files('.', pattern = "^CELESTA_classes_.*.csv", full.names = T)
+seurat_cluster_file <- list.files('.', pattern = "^seurat_clusters_.*.csv", full.names = T)
+
+roi <- sub("CELESTA_classes_", "", tools::file_path_sans_ext(basename(celesta_class_file)))
+
+celesta_classes <- fread(celesta_class_file)
+seurat_clusters <- fread(seurat_cluster_file)
+
+# celesta_classes <- fread(paste0("output_tables/CELESTA_classes_", roi, ".csv"))
+# seurat_clusters <- fread(paste0("output_tables/seurat_clusters_", roi, ".csv"))
+
+seurat_clusters <- seurat_clusters %>% filter(seurat_clusters != "Artifact")
+
+clusters_joined <- inner_join(celesta_classes, seurat_clusters)
+
+clusters_out <- clusters_joined %>% select(x, y, celesta_celltype = `Final cell type`, seurat_clusters)
+fwrite(clusters_out, paste0(roi, "_combined_classes.csv"))
+
+table(clusters_joined$`Final cell type`, clusters_joined$seurat_clusters)
+```
+
+## `r roi`
+
+```{r}
+compare_tab <- data.frame(table(clusters_joined$`Final cell type`, clusters_joined$seurat_clusters))
+colnames(compare_tab) <- c("CELESTA prediction", "Seurat cluster", "Freq")
+
+p <- ggplot(compare_tab, aes(x = `CELESTA prediction`, y = Freq, fill = `Seurat cluster`)) +
+  geom_bar(position="fill", stat="identity") +
+  theme_bw() +
+  xlab("metacluster")
+plot(p)
+```
+
+
+
+```{r}
+clusters_joined$`Final cell type`[clusters_joined$`Final cell type` == "Unknown"] <- NA
+
+## Plot CELESTA cell types
+p1 <- ggplot(clusters_joined %>% arrange(desc(is.na(clusters_joined$`Final cell type`))), aes(x = x, y = y, color = `Final cell type`)) +
+  geom_point() +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_bw() +
+  scale_color_discrete(na.value = "gray80") +
+  ggtitle("CELESTA")
+```
+
+```{r fig.width=12, fig.height=6}
+## Plot Seurat clusters
+clusters_joined$seurat_clusters <- factor(clusters_joined$seurat_clusters, levels = paste0("cluster_", 0:length(unique(clusters_joined$seurat_clusters)) -1))
+
+p2 <- ggplot(clusters_joined, aes(x = x, y = y, color = seurat_clusters)) +
+  geom_point() +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_bw() +
+  scale_color_discrete(na.value = "gray80") +
+  ggtitle("Seurat")
+
+# plot(p2)
+
+grid.arrange(p1, p2, ncol=2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

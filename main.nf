@@ -9,6 +9,7 @@ params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
 params.clusterscript = "${projectDir}/scripts/seurat_clustering.Rmd"
 params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
+params.class_comparison_script = "${projectDir}/scripts/classification_comparison.Rmd"
 params.data_pattern = "${projectDir}/data/*.[tc]sv"
 
 process RUNQC {
@@ -71,7 +72,6 @@ process COLLECTSIGSUM {
 }
 
 process RUNSEURAT {
-  maxForks 10
 
   publishDir 'output_reports', pattern: "*.html"
   publishDir 'output_tables', pattern: "*.csv"
@@ -84,7 +84,7 @@ process RUNSEURAT {
   
   output:
   path "clustering_report_${roi}.html"
-  path "seurat_clusters_${roi}.csv", emit: clusters
+  tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
   roi = all_markers.baseName.replace("all_markers_clean_", "")
@@ -95,7 +95,6 @@ process RUNSEURAT {
 }
 
 process RUNCELESTA {
-  maxForks 10
 
   publishDir 'output_reports', pattern: "*.html"
   publishDir 'output_tables', pattern: "*.csv"
@@ -108,7 +107,7 @@ process RUNCELESTA {
   
   output:
   path "celesta_report_${roi}.html"
-  path "CELESTA_classes_${roi}.csv", emit: clusters
+  tuple val(roi), path("CELESTA_classes_${roi}.csv"), emit: celesta_classes
     
   script:
   roi = all_markers.baseName.replace("all_markers_clean_", "")
@@ -142,11 +141,38 @@ process RUNMETACLUSTERS {
   
 }
 
+process RUNCOMPARISON { // This script should output the final cluster files, so the previous ones don't need to output cluster files
+
+  publishDir 'output_reports', pattern: "*.html"
+  publishDir 'output_tables', pattern: "*.csv"
+  
+  input:
+  path class_comparison_script
+  //path configs
+  tuple val(roi), path(seurat_clusters), path(celesta_classes)
+  
+  output:
+  path "classification_comparison_${roi}.html"
+  path "*_combined_classes.csv"
+  
+  script:
+  roi = celesta_classes.baseName.replace("CELESTA_classes_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${class_comparison_script}', 
+                                output_file='classification_comparison_${roi}.html')"
+  """
+  
+}
+
+
 params.qc_only = false
 params.qc_and_cluster=false
 
 workflow {
   file_ch = Channel.fromPath(params.data_pattern)
+  
+  //file_tuple_ch = file_ch | map { tuple( it.getBaseName(2), it ) }
   
 	RUNQC(file_ch, params.qcscript, params.configfile)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
@@ -155,10 +181,17 @@ workflow {
 	if (params.qc_and_cluster || !params.qc_only) {
 	  RUNSEURAT(params.clusterscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
 	  RUNCELESTA(params.celestascript, RUNQC.output.all_markers, params.configfile, params.celesta_prior_matrix)
+	  
+	  combined_output = RUNSEURAT.output.seurat_clusters \
+	      | combine(RUNCELESTA.output.celesta_classes, by:0)
+	  
+	  RUNCOMPARISON(params.class_comparison_script, combined_output)
+	      
+	  //RUNCOMPARISON(params.class_comparison_script, RUNCELESTA.output.celesta_classes, RUNSEURAT.output.seurat_clusters)
 	}
 	
 	if (!params.qc_and_cluster & !params.qc_only) {
-	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.clusters.collect())
+	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.collect(), RUNSEURAT.output.collect())
 	}	
 }
 
