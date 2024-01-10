@@ -1,8 +1,25 @@
 ---
 title: "Seurat vs CELESTA"
-output: html_document
-date: "2023-12-19"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+    toc: true
+    toc_float: true
+  pdf_document: default
 ---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,6 +28,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
+library(kableExtra)
 ```
 
 
@@ -23,20 +41,23 @@ roi <- sub("CELESTA_classes_", "", tools::file_path_sans_ext(basename(celesta_cl
 celesta_classes <- fread(celesta_class_file)
 seurat_clusters <- fread(seurat_cluster_file)
 
-# celesta_classes <- fread(paste0("output_tables/CELESTA_classes_", roi, ".csv"))
-# seurat_clusters <- fread(paste0("output_tables/seurat_clusters_", roi, ".csv"))
-
 seurat_clusters <- seurat_clusters %>% filter(seurat_clusters != "Artifact")
 
-clusters_joined <- inner_join(celesta_classes, seurat_clusters)
+clusters_joined <- inner_join(celesta_classes, seurat_clusters, by = c("x" = "x", "y" = "y"))
 
 clusters_out <- clusters_joined %>% select(x, y, celesta_celltype = `Final cell type`, seurat_clusters)
 fwrite(clusters_out, paste0(roi, "_combined_classes.csv"))
-
-table(clusters_joined$`Final cell type`, clusters_joined$seurat_clusters)
 ```
 
 ## `r roi`
+
+```{r}
+table(clusters_joined$`Final cell type`, clusters_joined$seurat_clusters) %>%
+  kbl() %>%
+  kable_styling()
+```
+
+
 
 ```{r}
 compare_tab <- data.frame(table(clusters_joined$`Final cell type`, clusters_joined$seurat_clusters))
@@ -44,8 +65,9 @@ colnames(compare_tab) <- c("CELESTA prediction", "Seurat cluster", "Freq")
 
 p <- ggplot(compare_tab, aes(x = `CELESTA prediction`, y = Freq, fill = `Seurat cluster`)) +
   geom_bar(position="fill", stat="identity") +
+  xlab("metacluster") +
   theme_bw() +
-  xlab("metacluster")
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 plot(p)
 ```
 
@@ -76,9 +98,9 @@ p2 <- ggplot(clusters_joined, aes(x = x, y = y, color = seurat_clusters)) +
   scale_color_discrete(na.value = "gray80") +
   ggtitle("Seurat")
 
-# plot(p2)
+plot(p1)
 
-grid.arrange(p1, p2, ncol=2)
+plot(p2)
 ```
 
 
