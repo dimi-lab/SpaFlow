@@ -84,6 +84,7 @@ process RUNSEURAT {
   
   output:
   path "clustering_report_${roi}.html"
+  path "seurat_clusters_${roi}.csv", emit: seurat_clusters_noid
   tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
@@ -127,11 +128,11 @@ process RUNMETACLUSTERS {
   path configs
   path marker_configs
   path allmarkers_collected
-  path clusters_collected
+  path seurat_output
   
   output:
   path "metacluster_report.html"
-  path "*_metaclusters.csv"
+  path "mapped*.csv"
   
   script:
   """
@@ -148,7 +149,6 @@ process RUNCOMPARISON { // This script should output the final cluster files, so
   
   input:
   path class_comparison_script
-  //path configs
   tuple val(roi), path(seurat_clusters), path(celesta_classes)
   
   output:
@@ -172,8 +172,6 @@ params.qc_and_cluster=false
 workflow {
   file_ch = Channel.fromPath(params.data_pattern)
   
-  //file_tuple_ch = file_ch | map { tuple( it.getBaseName(2), it ) }
-  
 	RUNQC(file_ch, params.qcscript, params.configfile)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
@@ -185,13 +183,13 @@ workflow {
 	  combined_output = RUNSEURAT.output.seurat_clusters \
 	      | combine(RUNCELESTA.output.celesta_classes, by:0)
 	  
-	  RUNCOMPARISON(params.class_comparison_script, combined_output)
+	 RUNCOMPARISON(params.class_comparison_script, combined_output)
 	      
-	  //RUNCOMPARISON(params.class_comparison_script, RUNCELESTA.output.celesta_classes, RUNSEURAT.output.seurat_clusters)
 	}
 	
 	if (!params.qc_and_cluster & !params.qc_only) {
-	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.collect(), RUNSEURAT.output.collect())
+	  
+	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
 	}	
 }
 
