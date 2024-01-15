@@ -7,11 +7,16 @@ params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rm
 params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
 params.clusterscript = "${projectDir}/scripts/clustering.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
-params.data_pattern = "${projectDir}/data/*.[tc]sv"
+
+params.input_dir = "${projectDir}/data"
+params.data_pattern = "${params.input_dir}/*.[tc]sv"
+params.output_dir = "${projectDir}"
 
 process RUNQC {
   maxForks 10
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+          path: "${params.output_dir}/output_tables"
+  )
 
   input:
   path quantfile
@@ -33,7 +38,10 @@ process RUNQC {
 }
 
 process COLLECTBINDENSITY {
-  publishDir 'output_reports', pattern: "*.html"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
   
   input:
   path collect_bin_density_script
@@ -51,7 +59,10 @@ process COLLECTBINDENSITY {
 }
 
 process COLLECTSIGSUM {
-  publishDir 'output_reports', pattern: "*.html"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
   
   input:
   path collect_sigsum_script
@@ -71,8 +82,15 @@ process COLLECTSIGSUM {
 process RUNCLUSTERS {
   maxForks 10
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+  )
   
   input:
   path clustering_script
@@ -94,8 +112,15 @@ process RUNCLUSTERS {
 
 process RUNMETACLUSTERS {
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+  )
   
   input:
   path metascript
