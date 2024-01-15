@@ -30,7 +30,7 @@ library(Seurat)
 library(progressr)
 library(data.table)
 library(dplyr)
-library(kableExtra)
+library(knitr)
 library(ComplexHeatmap)
 library(ggridges)
 library(clustree)
@@ -372,7 +372,7 @@ codex.obj <- normalize_and_reduce(codex.obj)
 
 If clustering resolution is not provided manually, clustree is used to help determine what clustering resolution should be used. Resolutions producing stable clusters (clusters which maintain more of the same cells across resolutions) are desirable.
 
-```{r fig.height=10, fig.width = 8}
+```{r fig.height=10, fig.width = 8, results='asis'}
 codex.obj <- FindNeighbors(object = codex.obj, dims = c(1:ncol(Embeddings(codex.obj, reduction = "pca"))), verbose = FALSE)
 
 if (!"clustering_res" %in% configs$object || is.na(configs$value[configs$object == "clustering_res"])) {
@@ -393,10 +393,13 @@ if (!"clustering_res" %in% configs$object || is.na(configs$value[configs$object 
     
     treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
     
-    tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
-    kable(tree_summary, align = "r")
+    tree_summary <- treedata %>% 
+      group_by(Akoya_snn_res.) %>% 
+      summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% 
+      select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+    print(kable(tree_summary, align = "r"))
     
-    ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+    tree_boxplot <- ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
       geom_boxplot() +
       geom_jitter(width = 0.2) +
       theme_bw() +
@@ -411,12 +414,15 @@ if (!"clustering_res" %in% configs$object || is.na(configs$value[configs$object 
     
     treedata$`Selected resolution` <- treedata$Akoya_snn_res. == clustering_res
     
-    tree_summary <- treedata %>% group_by(Akoya_snn_res.) %>% summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
-    kable(tree_summary, align = "r")
+    tree_summary <- treedata %>% 
+      group_by(Akoya_snn_res.) %>% 
+      summarise(sc3_sd = min(sc3_stability) + sd(sc3_stability), n_cluster = n()) %>% 
+      select(Resolution = Akoya_snn_res., `# clusters` = n_cluster)
+    print(kable(tree_summary, align = "r"))
     
     print(paste0("WARNING: None of the searched resolutions (0.1-1.9) produced the minimum number of clusters (", min_clusters, ") specified in configs.csv. You may need to reduce n_clusters in configs.csv. Continuing with resolution ", clustering_res, ", which produces ", final_nclust, " clusters."))
     
-    ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
+    tree_boxplot <- ggplot(treedata, aes(x = Akoya_snn_res., y = size, fill = `Selected resolution`)) +
       geom_boxplot() +
       geom_jitter(width = 0.2) +
       theme_bw() +
@@ -429,6 +435,11 @@ if (!"clustering_res" %in% configs$object || is.na(configs$value[configs$object 
   final_nclust <- length(unique(codex.obj$seurat_clusters))
 }
 ```
+
+```{r fig.height=8, fig.width=10}
+tree_boxplot
+```
+
 
 ## Final clustering: resolution `r clustering_res`,  `r final_nclust` clusters
 ```{r fig.height=5, fig.width=12}
