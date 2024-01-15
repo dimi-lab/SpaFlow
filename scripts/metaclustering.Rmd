@@ -142,6 +142,12 @@ all_normalized_cluster_summaries <- bind_rows(all_normalized_cluster_summaries, 
 all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(-column_label)
 ```
 
+```{r}
+df_list <- lapply(cluster_files, function(x) fread(x))
+
+names(df_list) <- basename(cluster_files)
+```
+
 
 ```{r fig.height=8, fig.width=12, results='asis'}
 for (i in seq_along(metacluster_range)) {
@@ -190,18 +196,23 @@ for (i in seq_along(metacluster_range)) {
   all_metacluster_counts$metacluster <- paste0("meta_", all_metacluster_counts$metacluster)
   
   for (j in cluster_files) {
-    clusterfile <- fread(j)
-    clusterfile$cluster <- paste(clusterfile$roi, clusterfile$seurat_clusters, sep = "_")
-    meta_mapped <- left_join(clusterfile, all_metacluster_counts, by = c("cluster" = "cluster", "roi" = "roi")) %>%
-      select(x, y, roi, cluster, metacluster)
+    single_df <- df_list[[basename(j)]]
+    single_df$cluster <- paste(single_df$roi, single_df$seurat_clusters, sep = "_")
+    meta_mapped <- left_join(single_df, all_metacluster_counts, by = c("cluster" = "cluster", "roi" = "roi")) #%>%
+      #select(x, y, roi, seurat_clusters, cluster, metacluster)
     meta_mapped$metacluster[grepl("Artifact", meta_mapped$cluster)] <- "Artifact"
-    fwrite(meta_mapped, paste0(meta_mapped$roi[1], "_mapped_clusters_", n_metaclusters, "_metaclusters.csv"))
+    colnames(meta_mapped)[colnames(meta_mapped) == "metacluster"] <- paste0("metaclusters_", metacluster_range[i])
+    df_list[[basename(j)]] <- meta_mapped
+    
   }
   
+  for (i in seq_along(df_list)) {
+    file_name <- sub("clusters", "mapped_clusters_metaclusters", names(df_list[i]))
+    fwrite(df_list[[i]], file_name)
+  }
 }
 
 ```
-
 
 
 

@@ -131,7 +131,7 @@ process RUNMETACLUSTERS {
   
   output:
   path "metacluster_report.html"
-  path "*_metaclusters.csv"
+  path "mapped*.csv"
   
   script:
   """
