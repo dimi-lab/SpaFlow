@@ -10,11 +10,17 @@ params.clusterscript = "${projectDir}/scripts/seurat_clustering.Rmd"
 params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
 params.class_comparison_script = "${projectDir}/scripts/classification_comparison.Rmd"
-params.data_pattern = "${projectDir}/data/*.[tc]sv"
+
+
+params.input_dir = "${projectDir}/data"
+params.data_pattern = "${params.input_dir}/*.[tc]sv"
+params.output_dir = "${projectDir}""
 
 process RUNQC {
   maxForks 10
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+          path: "${params.output_dir}/output_tables"
+      )
 
   input:
   path quantfile
@@ -36,7 +42,10 @@ process RUNQC {
 }
 
 process COLLECTBINDENSITY {
-  publishDir 'output_reports', pattern: "*.html"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
   
   input:
   path collect_bin_density_script
@@ -54,7 +63,10 @@ process COLLECTBINDENSITY {
 }
 
 process COLLECTSIGSUM {
-  publishDir 'output_reports', pattern: "*.html"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+    )
   
   input:
   path collect_sigsum_script
@@ -73,8 +85,15 @@ process COLLECTSIGSUM {
 
 process RUNSEURAT {
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+    )
   
   input:
   path clustering_script
@@ -97,8 +116,15 @@ process RUNSEURAT {
 
 process RUNCELESTA {
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+    )
   
   input:
   path celesta_script
@@ -120,8 +146,15 @@ process RUNCELESTA {
 
 process RUNMETACLUSTERS {
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+    )
   
   input:
   path metascript
@@ -144,8 +177,15 @@ process RUNMETACLUSTERS {
 
 process RUNCOMPARISON { // This script should output the final cluster files, so the previous ones don't need to output cluster files
 
-  publishDir 'output_reports', pattern: "*.html"
-  publishDir 'output_tables', pattern: "*.csv"
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+    )
   
   input:
   path class_comparison_script
