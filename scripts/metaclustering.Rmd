@@ -29,7 +29,7 @@ pacman::p_load(data.table, plyr, dplyr, knitr, ComplexHeatmap, ggplot2, pander)
 set.seed(123)
 ```
 
-Be sure to check the distribution of ROIs across metaclusters to verify that the ROIs are approximately evenly represented within the metaclusters. Unbalanced ROI proportions indicate unresolved batch effects between ROIs.
+Be sure to check the distribution of ROIs across metaclusters to verify that the ROIs are approximately evenly represented within the metaclusters. Unbalanced ROI proportions indicate unresolved batch effects between ROIs. **If there are more than 15 ROIs, plot legends will be omitted as they become uninterpretable.**
 
 ```{r}
 allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
@@ -114,8 +114,15 @@ make_heatmap <- function(dat, n_metaclusters) {
     as.matrix() %>% pheatmap:::scale_rows() %>% t()
   
   ## Annotation for cluster
+  textannot <- if(length(allmarker_files) > 15) {
+    rep(" ", length(smSub$seurat_clusters))
+    } else {
+      smSub$seurat_clusters
+    }
+  
   ha = HeatmapAnnotation(FOV = smSub$roi,
-                         ClusterID = anno_text(smSub$seurat_clusters, gp = gpar(fontsize = 8)))
+                         ClusterID = anno_text(textannot, gp = gpar(fontsize = 8)), 
+                         show_legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE))
   
   mat2[is.nan(mat2)] <- 0
   colnames(mat2) <- smSub$cluster
@@ -180,7 +187,7 @@ for (i in seq_along(metacluster_range)) {
   pandoc.header("Distribution of ROIs across metaclusters", level = 3)
   
   p <- ggplot(meta_orig_tab, aes(x = factor(metacluster, levels = as.character(1:n_metaclusters)), y = Freq, fill = ROI)) +
-    geom_bar(position="fill", stat="identity") +
+    geom_bar(position="fill", stat="identity", show.legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE)) +
     theme_bw() +
     xlab("metacluster")
   
