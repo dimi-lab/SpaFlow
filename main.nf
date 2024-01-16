@@ -20,7 +20,7 @@ process RUNQC {
   maxForks 10
   publishDir(
           path: "${params.output_dir}/output_tables"
-      )
+  )
 
   input:
   path quantfile
@@ -66,7 +66,8 @@ process COLLECTSIGSUM {
   publishDir(
         path: "${params.output_dir}/output_reports",
         pattern: "*.html"
-    )
+  )
+
   
   input:
   path collect_sigsum_script
@@ -88,12 +89,12 @@ process RUNSEURAT {
   publishDir(
         path: "${params.output_dir}/output_reports",
         pattern: "*.html"
-    )
+  )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
         pattern: "*.csv"
-    )
+  )
   
   input:
   path clustering_script
@@ -149,12 +150,12 @@ process RUNMETACLUSTERS {
   publishDir(
         path: "${params.output_dir}/output_reports",
         pattern: "*.html"
-    )
+  )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
         pattern: "*.csv"
-    )
+  )
   
   input:
   path metascript

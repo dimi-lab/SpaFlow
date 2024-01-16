@@ -38,13 +38,14 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
     i.  If markers are not provided or if all markers provided are not present in the dataset, the quantification file will search for a default list of markers; if all default markers are not present, all markers in the dataset will be used, excluding DAPI.
 5.  Call main pipeline script: `nextflow run main.nf`
     i.  By default, all three steps will run (QC, clustering, metaclustering). It is a good idea to first run the QC by itself by using the `--qc_only` flag. If you want to run both the QC and clustering steps, use `--qc_and_cluster`.
+    ii. To specify the input and output directories, use the flags `--input_dir` and `--output_dir` . Otherwise the data will be read from the `data` subdirectory in the directory your `main.nf` is located, and the outputs will be placed in the subdirectories `output_tables` and `output_reports`.
 
 ------------------------------------------------------------------------
 
 ### Configurable parameters
 
 | object               | value                                                                                                                                                     |
-|-----------------|-------------------------------------------------------|
+|-------------------|-----------------------------------------------------|
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                 |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                 |
 | bin_size             | Size of bounding box for low-density cell search (default 50)                                                                                             |
