@@ -50,11 +50,12 @@ default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD4
 
 ## Choose markers for clustering
 if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(grepl(x, colnames(roi_df)))))) {
-  markers_selected <- marker_configs$marker
+  markers_selected <- marker_configs$marker[!grepl("DAPI", marker_configs$marker)]
 } else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- default_markers
 } else {
   markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
+  markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
 }
 ```
 
