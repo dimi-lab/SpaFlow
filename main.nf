@@ -14,7 +14,7 @@ params.class_comparison_script = "${projectDir}/scripts/classification_compariso
 
 params.input_dir = "${projectDir}/data"
 params.data_pattern = "${params.input_dir}/*.[tc]sv"
-params.output_dir = "${projectDir}""
+params.output_dir = "${projectDir}"
 
 process RUNQC {
   maxForks 10
