@@ -60,9 +60,9 @@ prior_marker_info <- prior_marker_info %>% dplyr::select(-anchor, -index)
 ```{r}
 imaging_data <- fread(allmarkers_outfile)
 colnames(imaging_data) <- sub("\u00B5", "u", colnames(imaging_data))
-imaging_data <- imaging_data %>% filter(qc == "Cell") %>% select(X = `Centroid X um`, Y = `Centroid Y um`, contains("Cell: Median"))
+imaging_data <- imaging_data %>% filter(qc == "Cell") %>% select(X = `Centroid X um`, Y = `Centroid Y um`, contains("Cell: Mean"))
 
-colnames(imaging_data) <- sapply(colnames(imaging_data), function(x) sub(": Cell: Median", "", x))
+colnames(imaging_data) <- sapply(colnames(imaging_data), function(x) sub(": Cell: Mean", "", x))
 
 marker_cols <- colnames(prior_marker_info)[3:ncol(prior_marker_info)]
 imaging_data <- imaging_data %>% select("X", "Y", all_of(marker_cols))
