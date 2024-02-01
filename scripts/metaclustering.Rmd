@@ -23,8 +23,19 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(data.table, plyr, dplyr, knitr, ComplexHeatmap, ggplot2, pander)
+
+requiredPackages <- c("data.table", "plyr", "dplyr", "knitr", "ComplexHeatmap", "ggplot2", "pander")
+for (package in requiredPackages) { #Installs packages if not yet installed
+  if (!requireNamespace(package, quietly = TRUE))
+  install.packages(package)
+}
+library(data.table)
+library(plyr)
+library(dplyr)
+library(knitr)
+library(ComplexHeatmap)
+library(ggplot2)
+library(pander)
 
 set.seed(123)
 ```
