@@ -8,19 +8,18 @@ params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rm
 params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
 params.clusterscript = "${projectDir}/scripts/seurat_clustering.Rmd"
 params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
+params.scimapscript = "${projectDir}/scripts/scimap_clustering.py"
+params.scimap_report_script = "${projectDir}/scripts/scimap_report.Rmd"
 params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
 params.class_comparison_script = "${projectDir}/scripts/classification_comparison.Rmd"
 
 
 params.input_dir = "${projectDir}/data"
 params.data_pattern = "${params.input_dir}/*.[tc]sv"
-params.output_dir = "${projectDir}""
+params.output_dir = "${projectDir}"
 
 process RUNQC {
   maxForks 10
-  publishDir(
-          path: "${params.output_dir}/output_tables"
-  )
 
   input:
   path quantfile
@@ -145,6 +144,57 @@ process RUNCELESTA {
   """
 }
 
+process RUNSCIMAP {
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv"
+  )
+  
+  input:
+  path scimapscript
+  path all_markers
+  path configs
+  path marker_configs
+  
+  output:
+  path "scimap_clusters_${roi}.csv"
+  path "matrixplot_${roi}.png", emit: matrixplot
+  path "spatialplot_${roi}.png", emit: spatialplot
+  path "umap_${roi}.png", emit: umap
+    
+  script:
+  roi = all_markers.baseName.replace("all_markers_clean_", "")
+  
+  """
+  python scimap_clustering.py
+  """
+}
+
+process SCIMAPREPORT {
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html"
+  )
+  
+  input:
+  path scimap_report_script
+  path matrixplot
+  path spatialplot
+  path umap
+  
+  output:
+  path "*.html"
+  
+  script:
+  roi = umap.baseName.replace("umap_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${scimap_report_script}', 
+                                  output_file='scimap_report_${roi}.html')"
+  """  
+}
+
 process RUNMETACLUSTERS {
 
   publishDir(
@@ -225,6 +275,9 @@ workflow {
 	      | combine(RUNCELESTA.output.celesta_classes, by:0)
 	  
 	 RUNCOMPARISON(params.class_comparison_script, combined_output)
+	
+	RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot, RUNSCIMAP.output.spatialplot, RUNSCIMAP.output.umap)
 	      
 	}
 	

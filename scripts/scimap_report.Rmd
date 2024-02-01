@@ -1,0 +1,43 @@
+---
+title: "Scimap Clustering Report"
+output: html_document
+date: "2024-01-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+roi <- list.files('.', pattern = "^umap")
+roi <- sub("umap_", "", tools::file_path_sans_ext(basename(roi)))
+```
+
+## roi: `r roi`
+
+## UMAP of clusters
+```{r results='asis'}
+cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>'))
+```
+
+## Image plot of clusters
+```{r results='asis'}
+cat(paste0('<img src="', "spatialplot_", roi, ".png", '" width="500"/><br>'))
+```
+
+## Heatmap of clusters
+```{r results='asis'}
+cat(paste0('<img src="', "matrixplot_", roi, ".png", '"/><br>'))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

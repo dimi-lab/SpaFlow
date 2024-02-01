@@ -9,5 +9,6 @@ min_clusters,6
 min_res,0.1
 max_res,1.9
 res_step,0.2
+scimap_resolution,0.5
 min_metaclusters,5
 max_metaclusters,10
