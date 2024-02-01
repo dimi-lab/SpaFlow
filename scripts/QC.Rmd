@@ -30,6 +30,7 @@ for (package in requiredPackages) { #Installs packages if not yet installed
   if (!requireNamespace(package, quietly = TRUE))
   install.packages(package)
 }
+
 library(ggplot2)
 library(data.table)
 library(dplyr)
