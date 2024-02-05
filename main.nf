@@ -154,7 +154,8 @@ process RUNSCIMAP {
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
   )
   
   input:
@@ -180,7 +181,8 @@ process RUNSCIMAP {
 process SCIMAPREPORT {
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
   
   input:
