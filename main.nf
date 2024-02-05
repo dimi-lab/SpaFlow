@@ -14,9 +14,6 @@ params.output_dir = "${projectDir}"
 
 process RUNQC {
   maxForks 10
-  publishDir(
-          path: "${params.output_dir}/output_tables"
-  )
 
   input:
   path quantfile
@@ -40,7 +37,8 @@ process RUNQC {
 process COLLECTBINDENSITY {
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
   
   input:
@@ -61,7 +59,8 @@ process COLLECTBINDENSITY {
 process COLLECTSIGSUM {
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
   
   input:
@@ -84,12 +83,14 @@ process RUNCLUSTERS {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
   )
   
   input:
@@ -114,12 +115,14 @@ process RUNMETACLUSTERS {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
   )
   
   input:
