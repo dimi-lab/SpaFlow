@@ -43,7 +43,8 @@ process RUNQC {
 process COLLECTBINDENSITY {
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
   
   input:
@@ -64,7 +65,8 @@ process COLLECTBINDENSITY {
 process COLLECTSIGSUM {
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
 
   
@@ -87,12 +89,14 @@ process RUNSEURAT {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
   )
   
   input:
@@ -199,12 +203,14 @@ process RUNMETACLUSTERS {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
   )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
   )
   
   input:
