@@ -42,7 +42,7 @@ adata = ad.AnnData(singleJustVars) # create AnnData object
 adata.var_names = singleJustVars.columns.to_list() # Set variable names
 adata.obsm={ "spatial": noBad[['Centroid X um','Centroid Y um']].to_numpy() # Add coordinates
            }  
-adata.obs["imageid"] = pd.Categorical( noBad["Image"] ) # Add ROI number
+adata.obs["imageid"] = pd.Categorical( noBad["roi"] ) # Add ROI number
 adata.obs["X_centroid"] = noBad[['Centroid X um']].to_numpy()
 adata.obs["Y_centroid"] = noBad[['Centroid Y um']].to_numpy()
 
