@@ -122,12 +122,14 @@ process RUNCELESTA {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
     )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
     )
   
   input:
@@ -236,12 +238,14 @@ process RUNCOMPARISON { // This script should output the final cluster files, so
 
   publishDir(
         path: "${params.output_dir}/output_reports",
-        pattern: "*.html"
+        pattern: "*.html",
+        mode: "copy"
     )
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv"
+        pattern: "*.csv",
+        mode: "copy"
     )
   
   input:

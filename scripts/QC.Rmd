@@ -157,6 +157,7 @@ roi_df$qc[(roi_df$sigsum > sigsum_cutpoint_1) | (roi_df$sigsum < sigsum_cutpoint
 roi_df$qc[roi_df$bin_density <= density_cutoff] <- "Artifact"
 roi_df$roi <- roi
 
+
 cols_keep <- c("roi", 
                "sigsum_metric", "sigsum", "qc", "binX", "binY", "bin_density", 
                "low_bin_density")
