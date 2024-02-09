@@ -44,20 +44,20 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 
 ### Configurable parameters
 
-| object               | value                                                                                                                                                     |
-|-------------------|-----------------------------------------------------|
-| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                 |
-| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                 |
-| bin_size             | Size of bounding box for low-density cell search (default 50)                                                                                             |
-| density_cutoff       | Cutoff number of cells defined as low-density (default 5)                                                                                                 |
-| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                                                                      |
-| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. Set to NA or remove row to use clustree method. |
-| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                                                                       |
-| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                                                                       |
-| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)                                                       |
-| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                   |
-| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                     |
-| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                      |
+| object               | value                                                                                                                                                                                                              |
+|--------------------|----------------------------------------------------|
+| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
+| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
+| bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |
+| density_cutoff       | Cutoff number of cells defined as low-density (default 5). Higher density cutoff is more stringent (will remove more cells at the same bin size)                                                                   |
+| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                                                                                                                               |
+| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. Set to NA or remove row to use clustree method. Larger clustering resolutions will create more clusters. |
+| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                                                                                                                                |
+| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                                                                                                                                |
+| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)                                                                                                                |
+| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                                                                            |
+| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                                                                              |
+| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                                                                               |
 
 ------------------------------------------------------------------------
 
