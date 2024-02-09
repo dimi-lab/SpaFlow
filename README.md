@@ -9,7 +9,6 @@ Pipeline visualized below
 -   Nextflow 23.04.2
 -   pandoc 3.1.2
 -   R 4.2.2
--   R Packages
     -   knitr 1.44
     -   ggplot2 3.4.4
     -   data.table 1.14.8
@@ -23,6 +22,8 @@ Pipeline visualized below
     -   pheatmap 1.0.12
     -   plyr 1.8.9
     -   pander 0.6.5
+-   Python 3.8
+    -   scimap 1.3.2
 
 ------------------------------------------------------------------------
 
@@ -31,14 +32,17 @@ Pipeline visualized below
 Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantification files) generated from segmented single cell MxIF images.
 
 1.  Clone repository to your machine
-2.  Place quantification files in `data` directory
+2.  Place quantification files in your input directory
     i.  Files should be in the format `<fov_name>.tsv` or `<fov_name>.csv` (e.g. `region_001.tsv`)
-3.  Adjust configuration values in `configs.csv`
-4.  Add desired markers to `marker_configs.csv` - all markers provided must be present in the dataset
+3.  Adjust configuration values in `configs.csv` (see 'Configurable parameters')
+4.  If running CELESTA, set up `celesta_prior_matrix.csv` with your markers and cell types according to the CELESTA specification (see "Inputs" here: <https://github.com/plevritis-lab/CELESTA>)
+5.  Add desired markers to `marker_configs.csv` - all markers provided must be present in the dataset
     i.  If markers are not provided or if all markers provided are not present in the dataset, the quantification file will search for a default list of markers; if all default markers are not present, all markers in the dataset will be used, excluding DAPI.
-5.  Call main pipeline script: `nextflow run main.nf`
-    i.  By default, all three steps will run (QC, clustering, metaclustering). It is a good idea to first run the QC by itself by using the `--qc_only` flag. If you want to run both the QC and clustering steps, use `--qc_and_cluster`.
-    ii. To specify the input and output directories, use the flags `--input_dir` and `--output_dir` . Otherwise the data will be read from the `data` subdirectory in the directory your `main.nf` is located, and the outputs will be placed in the subdirectories `output_tables` and `output_reports`.
+6.  Set up `params.yaml` with your input and output directories, as well as the location of your configuration files.
+    i.  qc_only=true will run only the QC step. It is a good idea to first run QC and check the results before moving on to clustering.
+
+    ii. run_scimap=false or run_celesta=false will skip running scimap or CELESTA, respectively.
+7.  Call main pipeline script: `nextflow run main.nf -params-file=params.yaml`
 
 ------------------------------------------------------------------------
 
@@ -68,22 +72,58 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 -   `output_reports/bin_density_report.html` and `output_reports/sigsum_report.html`
     -   Reports contain one QC image for each ROI
     -   Plots for sigsum cutoffs and bin density flags
--   `output_tables/all_markers_clean_<roi_name>.csv`
+-   `output_tables/all_markers_clean_<roi>.csv`
     -   Quantification file in the same format as input files but with additional columns for QC metrics and QC flags
 
-**clustering.Rmd**
+**seurat_clustering.Rmd**
 
--   `output_reports/clustering_report_<roi_name>.html`
+-   `output_reports/clustering_report_<roi>.html`
     -   Clustree plot, selected resolution, marker vs cluster heatmaps and ridgeplots
--   `output_tables/clusters_<roi_name>.html`
+-   `output_tables/seurat_clusters_<roi>.html`
     -   Clusters mapped to cell coordinates - includes artifacts
 
 **metaclustering.Rmd**
 
 -   `output_reports/metaclustering_report.html`
     -   Marker vs metacluster heatmaps; barplots for proportion of ROI per metacluster
--   `output_tables/<roi_name>_mapped_metaclusters_n_metaclusters.csv`
+-   `output_tables/<roi>_mapped_metaclusters_n_metaclusters.csv`
     -   Clusters and metaclusters mapped to cell coordinates - includes artifacts
+
+**CELESTA_clustering.Rmd**
+
+-   `output_reports/celesta_report_<roi>.html`
+
+    -   CELESTA marker thresholding plots, final cell type counts and spatial plots for CELESTA classification.
+
+-   `output_tables/CELESTA_classes_<roi>.csv`
+
+    -   CELESTA class predictions mapped to coordinates, including results from each round of classification.
+
+**seurat_vs_celesta.Rmd**
+
+-   `output_reports/classification_comparison_<roi>.html`
+
+    -   Tables and plots comparing seurat clusters to celesta class predictions.
+
+-   `output_tables/<roi>_combined_classes.csv`
+
+    -   Combined mapping of seurat clusters and CELESTA final round classes with coordinates.
+
+**scimap_clustering.py and scimap_report.Rmd**
+
+-   `output_reports/scimap_report_<roi>.csv`
+
+    -   UMAP, spatial, and heatmap plots for scimap clustering.
+
+-   `output_tables/scimap_clusters_<roi>.csv`
+
+    -   Mapping of scimap leiden clusters to cell coordinates.
+
+**seurat_vs_scimap.Rmd**
+
+-   `output_reports/scimap_report_<roi>.html`
+
+    -   Tables and plots comparing scimap and seurat clustering results.
 
 ------------------------------------------------------------------------
 
