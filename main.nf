@@ -2,11 +2,17 @@
 
 params.configfile = "${projectDir}/configs.csv"
 params.markerconfigfile = "${projectDir}/marker_configs.csv"
+params.celesta_prior_matrix = "${projectDir}/celesta_prior_matrix.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
 params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
 params.collect_sigsum_script= "${projectDir}/scripts/collect_sigsum.Rmd"
-params.clusterscript = "${projectDir}/scripts/clustering.Rmd"
-params.metascript = "${projectDir}/scripts/metaclustering.Rmd"
+params.seuratscript = "${projectDir}/scripts/seurat_clustering.Rmd"
+params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
+params.scimapscript = "${projectDir}/scripts/scimap_clustering.py"
+params.scimap_report_script = "${projectDir}/scripts/scimap_report.Rmd"
+params.seurat_metacluster_script = "${projectDir}/scripts/seurat_metaclustering.Rmd"
+params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
+params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 
 params.input_dir = "${projectDir}/data"
 params.data_pattern = "${params.input_dir}/*.[tc]sv"
@@ -62,6 +68,7 @@ process COLLECTSIGSUM {
         pattern: "*.html",
         mode: "copy"
   )
+
   
   input:
   path collect_sigsum_script
@@ -78,8 +85,7 @@ process COLLECTSIGSUM {
   """  
 }
 
-process RUNCLUSTERS {
-  maxForks 10
+process RUNSEURAT {
 
   publishDir(
         path: "${params.output_dir}/output_reports",
@@ -100,15 +106,102 @@ process RUNCLUSTERS {
   path marker_configs
   
   output:
-  path "clustering_report_${roi}.html"
-  path "clusters_${roi}.csv", emit: clusters
+  path "seurat_report_${roi}.html"
+  path "seurat_clusters_${roi}.csv", emit: seurat_clusters_noid
+  tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
   roi = all_markers.baseName.replace("all_markers_clean_", "")
   
   """
-  Rscript -e "rmarkdown::render('${clustering_script}', output_file='clustering_report_${roi}.html')" $all_markers $configs $marker_configs
+  Rscript -e "rmarkdown::render('${clustering_script}', output_file='seurat_report_${roi}.html')" $all_markers $configs $marker_configs
   """
+}
+
+process RUNCELESTA {
+
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html",
+        mode: "copy"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv",
+        mode: "copy"
+    )
+  
+  input:
+  path celesta_script
+  path all_markers
+  path configs
+  path celesta_prior_matrix
+  
+  output:
+  path "celesta_report_${roi}.html"
+  tuple val(roi), path("celesta_classes_${roi}.csv"), emit: celesta_classes
+    
+  script:
+  roi = all_markers.baseName.replace("all_markers_clean_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${celesta_script}', output_file='celesta_report_${roi}.html')" $all_markers $configs
+  """
+}
+
+process RUNSCIMAP {
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv",
+        mode: "copy"
+  )
+  
+  input:
+  path scimapscript
+  path all_markers
+  path configs
+  path marker_configs
+  
+  output:
+  path "scimap_clusters_${roi}.csv"
+  tuple val(roi), path("scimap_clusters_${roi}.csv") , emit: scimap_clusters
+  path "matrixplot_${roi}.png", emit: matrixplot
+  path "spatialplot_${roi}.png", emit: spatialplot
+  path "umap_${roi}.png", emit: umap
+    
+  script:
+  roi = all_markers.baseName.replace("all_markers_clean_", "")
+  
+  """
+  python scimap_clustering.py
+  """
+}
+
+process SCIMAPREPORT {
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html",
+        mode: "copy"
+  )
+  
+  input:
+  path scimap_report_script
+  path matrixplot
+  path spatialplot
+  path umap
+  
+  output:
+  path "*.html"
+  
+  script:
+  roi = umap.baseName.replace("umap_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${scimap_report_script}', 
+                                  output_file='scimap_report_${roi}.html')"
+  """  
 }
 
 process RUNMETACLUSTERS {
@@ -126,26 +219,85 @@ process RUNMETACLUSTERS {
   )
   
   input:
-  path metascript
+  path seurat_metacluster_script
   path configs
   path marker_configs
   path allmarkers_collected
-  path clusters_collected
+  path seurat_output
   
   output:
-  path "metacluster_report.html"
-  path "mapped*.csv"
+  path "seurat_metacluster_report.html"
+  path "seurat_metaclusters*.csv"
   
   script:
   """
-  Rscript -e "rmarkdown::render('${metascript}', 
-                                output_file='metacluster_report.html')"
+  Rscript -e "rmarkdown::render('${seurat_metacluster_script}', 
+                                output_file='seurat_metacluster_report.html')"
   """
   
 }
 
+process RUNCOMPARISON { // This script should output the final cluster files, so the previous ones don't need to output cluster files
+
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html",
+        mode: "copy"
+    )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables",
+        pattern: "*.csv",
+        mode: "copy"
+    )
+  
+  input:
+  path seurat_vs_celesta_script
+  tuple val(roi), path(seurat_clusters), path(celesta_classes)
+  
+  output:
+  path "seurat_vs_celesta_report_${roi}.html"
+  path "seurat_vs_celesta_clusters_*.csv"
+  
+  script:
+  roi = celesta_classes.baseName.replace("celesta_classes_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${seurat_vs_celesta_script}', 
+                                output_file='seurat_vs_celesta_report_${roi}.html')"
+  """
+  
+}
+
+process SEURATVSCIMAP {
+
+  publishDir(
+        path: "${params.output_dir}/output_reports",
+        pattern: "*.html",
+        mode: "copy"
+    )
+  
+  input:
+  path seurat_vs_scimap_script
+  tuple val(roi), path(seurat_clusters), path(scimap_clusters)
+  
+  output:
+  path "seurat_vs_scimap_report_${roi}.html"
+  
+  script:
+  roi = scimap_clusters.baseName.replace("scimap_clusters_", "")
+  
+  """
+  Rscript -e "rmarkdown::render('${seurat_vs_scimap_script}', 
+                                output_file='seurat_vs_scimap_report_${roi}.html')"
+  """
+  
+}
+
+
 params.qc_only = false
-params.qc_and_cluster=false
+params.run_scimap = true
+params.run_celesta = true
 
 workflow {
   file_ch = Channel.fromPath(params.data_pattern)
@@ -154,13 +306,36 @@ workflow {
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
-	if (params.qc_and_cluster || !params.qc_only) {
-	  RUNCLUSTERS(params.clusterscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
-	}
+	if (!params.qc_only) {
+	  // Run Seurat with metaclustering
+	  RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	  RUNMETACLUSTERS(params.seurat_metacluster_script, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+	  
+	  if (params.run_celesta) {
+	    // Run CELESTA
+	    RUNCELESTA(params.celestascript, RUNQC.output.all_markers, params.configfile, params.celesta_prior_matrix)
+	  
+  	  // combine seurat and CELESTA output for comparison
+  	  combined_output = RUNSEURAT.output.seurat_clusters \
+        | combine(RUNCELESTA.output.celesta_classes, by:0)
+  	  
+  	  RUNCOMPARISON(params.seurat_vs_celesta_script, combined_output)
+	  }
 	
-	if (!params.qc_and_cluster & !params.qc_only) {
-	  RUNMETACLUSTERS(params.metascript, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNCLUSTERS.output.clusters.collect())
-	}	
+	  if (params.run_scimap) {
+	  // Run Scimap and build report
+	  RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	  SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot, RUNSCIMAP.output.spatialplot, RUNSCIMAP.output.umap)
+	
+	  // Combine seurat and scimap output for comparison
+	  combined_output_seurat_scimap = RUNSEURAT.output.seurat_clusters \
+      | combine(RUNSCIMAP.output.scimap_clusters, by:0)
+	  
+	   SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
+	  }
+	      
+	}
+	  
 }
 
 

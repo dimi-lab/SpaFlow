@@ -1,0 +1,130 @@
+---
+title: "Seurat vs Scimap"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+    toc: true
+    toc_float: true
+  pdf_document: default
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(kableExtra)
+```
+
+
+```{r}
+scimap_cluster_file <- list.files('.', pattern = "^scimap_clusters_.*.csv", full.names = T)
+seurat_cluster_file <- list.files('.', pattern = "^seurat_clusters_.*.csv", full.names = T)
+
+roi <- sub("scimap_clusters_", "", tools::file_path_sans_ext(basename(scimap_cluster_file)))
+
+scimap_clusters <- fread(scimap_cluster_file)
+seurat_clusters <- fread(seurat_cluster_file)
+
+seurat_clusters <- seurat_clusters %>% filter(seurat_clusters != "Artifact")
+
+clusters_joined <- inner_join(seurat_clusters, scimap_clusters, by = c("x" = "X_centroid", "y" = "Y_centroid"))
+
+clusters_out <- clusters_joined %>% select(x, y, scimap_leiden = leiden, seurat_clusters)
+# fwrite(clusters_out, paste0(roi, "_combined_classes.csv"))
+```
+
+## `r roi`
+
+```{r}
+table(clusters_joined$leiden, clusters_joined$seurat_clusters) %>%
+  kbl() %>%
+  kable_styling()
+```
+
+
+
+```{r}
+compare_tab <- data.frame(table(clusters_joined$leiden, clusters_joined$seurat_clusters))
+colnames(compare_tab) <- c("Scimap cluster", "Seurat cluster", "Freq")
+
+p <- ggplot(compare_tab, aes(x = `Scimap cluster`, y = Freq, fill = `Seurat cluster`)) +
+  geom_bar(position="fill", stat="identity") +
+  xlab("metacluster") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot(p)
+```
+
+
+
+```{r}
+clusters_joined$leiden <- as.factor(clusters_joined$leiden)
+
+## Plot CELESTA cell types
+p1 <- ggplot(clusters_joined, aes(x = x, y = y, color = leiden)) +
+  geom_point() +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_bw() +
+  ggtitle("Scimap")
+```
+
+```{r fig.width=12, fig.height=6}
+## Plot Seurat clusters
+clusters_joined$seurat_clusters <- factor(clusters_joined$seurat_clusters, levels = paste0("cluster_", 0:length(unique(clusters_joined$seurat_clusters)) -1))
+
+p2 <- ggplot(clusters_joined, aes(x = x, y = y, color = seurat_clusters)) +
+  geom_point() +
+  coord_fixed() +
+  scale_y_reverse() +
+  theme_bw() +
+  scale_color_discrete(na.value = "gray80") +
+  ggtitle("Seurat")
+
+plot(p1)
+
+plot(p2)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
