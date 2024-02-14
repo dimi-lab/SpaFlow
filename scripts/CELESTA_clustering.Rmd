@@ -114,7 +114,7 @@ CelestaObj <- AssignCells(CelestaObj,max_iteration=10,cell_change_threshold=0.01
 ```{r}
 celltypes <- CelestaObj@final_cell_type_assignment %>% as.data.frame()
 celltypes <- cbind(imaging_data[,1:2], celltypes) %>% rename(x = X, y = Y)
-fwrite(celltypes, paste0("CELESTA_classes_", roi, ".csv"))
+fwrite(celltypes, paste0("celesta_classes_", roi, ".csv"))
 
 as.data.frame(table(celltypes$`Final cell type`)) %>% rename("Cell Type" = Var1)
 ```

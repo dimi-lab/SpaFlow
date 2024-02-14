@@ -33,10 +33,10 @@ library(kableExtra)
 
 
 ```{r}
-celesta_class_file <- list.files('.', pattern = "^CELESTA_classes_.*.csv", full.names = T)
+celesta_class_file <- list.files('.', pattern = "^celesta_classes_.*.csv", full.names = T)
 seurat_cluster_file <- list.files('.', pattern = "^seurat_clusters_.*.csv", full.names = T)
 
-roi <- sub("CELESTA_classes_", "", tools::file_path_sans_ext(basename(celesta_class_file)))
+roi <- sub("celesta_classes_", "", tools::file_path_sans_ext(basename(celesta_class_file)))
 
 celesta_classes <- fread(celesta_class_file)
 seurat_clusters <- fread(seurat_cluster_file)
@@ -46,7 +46,7 @@ seurat_clusters <- seurat_clusters %>% filter(seurat_clusters != "Artifact")
 clusters_joined <- inner_join(celesta_classes, seurat_clusters, by = c("x" = "x", "y" = "y"))
 
 clusters_out <- clusters_joined %>% select(x, y, celesta_celltype = `Final cell type`, seurat_clusters)
-fwrite(clusters_out, paste0(roi, "_combined_classes.csv"))
+fwrite(clusters_out, paste0("seurat_vs_celesta_clusters_", roi, ".csv"))
 ```
 
 ## `r roi`

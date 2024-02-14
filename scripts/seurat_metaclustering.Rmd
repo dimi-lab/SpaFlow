@@ -221,7 +221,7 @@ for (i in seq_along(metacluster_range)) {
   }
   
   for (i in seq_along(df_list)) {
-    file_name <- sub("seurat_clusters", "mapped_clusters_metaclusters", names(df_list[i]))
+    file_name <- sub("seurat_clusters", "seurat_metaclusters", names(df_list[i]))
 
     fwrite(df_list[[i]], file_name)
   }
