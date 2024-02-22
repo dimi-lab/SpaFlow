@@ -55,8 +55,8 @@ marker_configs_path <- commandArgs(trailingOnly=T)[3]
 
 ```{r}
 ## File paths
-configs <- fread(configs_path)
-marker_configs <- fread(marker_configs_path)
+configs <- fread(configs_path, sep=",")
+marker_configs <- fread(marker_configs_path, sep=",")
 roi_df <- fread(allmarkers_outfile)
 
 # Clustering parameters

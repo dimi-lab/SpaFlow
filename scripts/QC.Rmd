@@ -44,7 +44,7 @@ configs_path <- commandArgs(trailingOnly=T)[2]
 
 ```{r}
 ## File paths
-configs <- fread(configs_path)
+configs <- fread(configs_path, sep=",")
 
 cluster_outfile <- paste0("clusters_", roi, ".csv")
 

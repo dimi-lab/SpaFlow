@@ -49,7 +49,7 @@ configs_path <- commandArgs(trailingOnly=T)[2]
 
 
 ```{r}
-prior_marker_info <- fread('celesta_prior_matrix.csv')
+prior_marker_info <- fread('celesta_prior_matrix.csv', sep=",")
 
 anchor_high <- prior_marker_info$anchor
 index_high <- prior_marker_info$index
