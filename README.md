@@ -1,4 +1,4 @@
-# Nextflow Pipeline for QC and Clustering of MxIF Datasets
+<img src="https://github.com/dimi-lab/mxif_clustering_pipeline/blob/main/images/SpaFlow.png" width="1000"/>
 
 Pipeline visualized below
 
@@ -49,7 +49,7 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 ### Configurable parameters
 
 | object               | value                                                                                                                                                                                                              |
-|--------------------|----------------------------------------------------|
+|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
 | bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |
