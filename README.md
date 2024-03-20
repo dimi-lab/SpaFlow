@@ -6,7 +6,7 @@ Pipeline visualized below
 
 ## Requirements/Dependencies
 
--   Nextflow 23.04.2
+-   Nextflow 23.04.2 (requires: bash, java 11 [or later, up to 21] git and docker)
 -   pandoc 3.1.2
 -   R 4.2.2
     -   knitr 1.44
