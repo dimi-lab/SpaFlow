@@ -15,7 +15,7 @@ roi <- sub("umap_", "", tools::file_path_sans_ext(basename(roi)))
 
 ## UMAP of clusters
 ```{r results='asis'}
-cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>'))
+cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
 ```
 
 ## Image plot of clusters

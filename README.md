@@ -22,8 +22,19 @@ Pipeline visualized below
     -   pheatmap 1.0.12
     -   plyr 1.8.9
     -   pander 0.6.5
+    -   CELESTA 0.0.0.9000
+        -   Rmixmod 2.1.9
+
+        -   spdep 1.3-3
+
+        -   reshape2 1.4.4
+
+        -   zeallot 0.1.0
 -   Python 3.8
     -   scimap 1.3.2
+    -   anndata 0.7.8
+    -   pandas 1.5.3
+    -   scanpy 1.9.6
 
 ------------------------------------------------------------------------
 
@@ -49,7 +60,7 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 ### Configurable parameters
 
 | object               | value                                                                                                                                                                                                              |
-|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-----------------------------------------------------------|
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
 | bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |

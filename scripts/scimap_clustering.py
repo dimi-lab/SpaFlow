@@ -4,7 +4,6 @@ import os
 import anndata as ad
 import pandas as pd
 import scanpy as sc
-import seaborn as sns; sns.set(color_codes=True)
 
 # Import Scimap
 import scimap as sm
@@ -57,7 +56,7 @@ adata = sm.tl.cluster(adata, method = 'leiden', subset_genes = marker_subset, re
 sc.pl.umap(adata, color=['leiden'], cmap= 'vlag', use_raw=False, s=30, save = f'_{roi}.png', show=False)
 
 # Plot heatmap of clusters vs markers
-sc.pl.matrixplot(adata, var_names= adata.var.index, groupby='leiden', dendrogram=True, 
+sc.pl.matrixplot(adata, var_names= adata.var.index, groupby='leiden', dendrogram=True, #### Add another with only subset genes
 use_raw=False, cmap="vlag", standard_scale='var', save = f'{roi}.png', show = False)
 
 sm.pl.spatial_scatterPlot(adata, colorBy='leiden', s=2, outputDir = './', outputFileName = f'spatialplot_{roi}.png')
