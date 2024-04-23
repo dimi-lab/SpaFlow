@@ -523,3 +523,20 @@ ht_all_bycolumn <- draw(ht_all_bycolumn)
 RidgePlot(codex.obj, features = row.names(codex.obj), ncol = 3)
 ```
 
+
+```{r}
+## Write out cluster centroids from scale.data slot
+normdata <- GetAssayData(codex.obj[['Akoya']], layer = 'scale.data') %>% t() %>% as.data.frame()
+normdata$seurat_clusters <- Idents(codex.obj)
+
+cluster_medians <- 
+  normdata %>%
+  select(seurat_clusters, all_of(markers_selected)) %>% 
+  group_by(seurat_clusters) %>% 
+  summarise_at(markers_selected, list(mean = mean, median = median, sd = sd), na.rm = T, ) %>%
+  mutate(seurat_clusters = paste0(roi, "_", seurat_clusters))
+
+fwrite(cluster_medians, paste0("CLR_seurat_centroids_", roi, ".csv"))
+```
+
+

@@ -108,7 +108,7 @@ get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
     filter(seurat_clusters != "Artifact") %>%
     select(x, y, roi, seurat_clusters, all_of(paste0(markers_selected, ": Cell: Median"))) %>% 
     group_by(seurat_clusters) %>% 
-    summarise_at(paste0(markers_selected, ": Cell: Median"), median, na.rm = T) %>%
+    summarise_at(paste0(markers_selected, ": Cell: Median"), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
     mutate(seurat_clusters = paste0(roi, "_", seurat_clusters), roi = roi)
   
   data.frame(cluster_medians, check.names = F)
@@ -154,6 +154,12 @@ make_heatmap <- function(dat, n_metaclusters) {
 all_normalized_cluster_summaries <- mapply(get_normalized_cluster_summary, allmarker_files, cluster_files, SIMPLIFY = F)
 all_normalized_cluster_summaries <- bind_rows(all_normalized_cluster_summaries, .id = "column_label")
 all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(-column_label)
+
+centroids_out <- all_normalized_cluster_summaries %>% select(-roi)
+fwrite(centroids_out, "arcsin_zscore_seurat_centroids.csv")
+
+all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(-contains("sd|mean"))
+colnames(all_normalized_cluster_summaries) <- sapply(colnames(all_normalized_cluster_summaries), function(x) sub("_median", "", x))
 ```
 
 ```{r}

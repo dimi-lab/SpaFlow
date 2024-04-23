@@ -95,7 +95,13 @@ process RUNSEURAT {
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv",
+        pattern: "seurat_clusters*.csv",
+        mode: "copy"
+  )
+  
+  publishDir(
+        path: "${params.output_dir}/intermediates",
+        pattern: "CLR_seurat_centroids*.csv",
         mode: "copy"
   )
   
@@ -108,6 +114,7 @@ process RUNSEURAT {
   output:
   path "seurat_report_${roi}.html"
   path "seurat_clusters_${roi}.csv", emit: seurat_clusters_noid
+  path "CLR_seurat_centroids_${roi}.csv"
   tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
@@ -214,7 +221,13 @@ process RUNMETACLUSTERS {
     
   publishDir(
         path: "${params.output_dir}/output_tables",
-        pattern: "*.csv",
+        pattern: "seurat_metaclusters*.csv",
+        mode: "copy"
+  )
+  
+  publishDir(
+        path: "${params.output_dir}/intermediates",
+        pattern: "arcsin_zscore_seurat_centroids.csv",
         mode: "copy"
   )
   
@@ -226,6 +239,7 @@ process RUNMETACLUSTERS {
   path seurat_output
   
   output:
+  path "arcsin_zscore_seurat_centroids.csv"
   path "seurat_metacluster_report.html"
   path "seurat_metaclusters*.csv"
   
