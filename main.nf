@@ -86,7 +86,7 @@ process COLLECTSIGSUM {
 }
 
 process RUNSEURAT {
-
+  maxForks 10
   publishDir(
         path: "${params.output_dir}/output_reports",
         pattern: "*.html",
@@ -119,7 +119,7 @@ process RUNSEURAT {
 }
 
 process RUNCELESTA {
-
+  maxForks 10
   publishDir(
         path: "${params.output_dir}/output_reports",
         pattern: "*.html",
@@ -151,7 +151,7 @@ process RUNCELESTA {
 }
 
 process RUNSCIMAP {
-    
+  maxForks 10
   publishDir(
         path: "${params.output_dir}/output_tables",
         pattern: "*.csv",
@@ -298,6 +298,7 @@ process SEURATVSCIMAP {
 params.qc_only = false
 params.run_scimap = true
 params.run_celesta = true
+params.run_seurat = true
 
 workflow {
   file_ch = Channel.fromPath(params.data_pattern)
@@ -307,31 +308,36 @@ workflow {
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
 	if (!params.qc_only) {
-	  // Run Seurat with metaclustering
-	  RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
-	  RUNMETACLUSTERS(params.seurat_metacluster_script, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+	  if (params.run_seurat)	{
+	    // Run Seurat with metaclustering
+	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	    RUNMETACLUSTERS(params.seurat_metacluster_script, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+	  }  
 	  
 	  if (params.run_celesta) {
 	    // Run CELESTA
 	    RUNCELESTA(params.celestascript, RUNQC.output.all_markers, params.configfile, params.celesta_prior_matrix)
 	  
-  	  // combine seurat and CELESTA output for comparison
+	    if(params.run_seurat) {  	  // combine seurat and CELESTA output for comparison
   	  combined_output = RUNSEURAT.output.seurat_clusters \
         | combine(RUNCELESTA.output.celesta_classes, by:0)
   	  
   	  RUNCOMPARISON(params.seurat_vs_celesta_script, combined_output)
+	    }
 	  }
 	
 	  if (params.run_scimap) {
-	  // Run Scimap and build report
-	  RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
-	  SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot, RUNSCIMAP.output.spatialplot, RUNSCIMAP.output.umap)
+	    // Run Scimap and build report
+	    RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	    SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot, RUNSCIMAP.output.spatialplot, RUNSCIMAP.output.umap)
 	
-	  // Combine seurat and scimap output for comparison
-	  combined_output_seurat_scimap = RUNSEURAT.output.seurat_clusters \
-      | combine(RUNSCIMAP.output.scimap_clusters, by:0)
+	    if(params.run_seurat) {
+	      // Combine seurat and scimap output for comparison
+	      combined_output_seurat_scimap = RUNSEURAT.output.seurat_clusters \
+          | combine(RUNSCIMAP.output.scimap_clusters, by:0)
 	  
-	   SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
+	     SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
+	    }
 	  }
 	      
 	}
