@@ -85,6 +85,7 @@ if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(
 }
 
 markers_selected <- gsub("_", "-", markers_selected)
+markers_selected <- markers_selected[markers_selected != ""]
 ```
 
 ```{r include = FALSE}
