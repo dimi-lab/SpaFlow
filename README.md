@@ -2,7 +2,7 @@
 
 Pipeline visualized below
 
-<img src="https://github.com/dimi-lab/SpaFlow/blob/main/images/mxif-pipeline.png" width="1000"/>
+<img src="https://github.com/dimi-lab/SpaFlow/blob/main/images/Spaflow_metro.png" width="1000"/>
 
 ## Requirements/Dependencies
 
