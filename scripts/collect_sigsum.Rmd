@@ -1,8 +1,6 @@
 ---
 title: "Bin Density QC Plots"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-params:
-  sigsum_collected: ""
 output:
   html_document:
     code_folding: hide
@@ -26,7 +24,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r results='asis'}
-all_sigsum <- sort(unlist(strsplit(params$sigsum_collected, ",")))
+all_sigsum <- sort(list.files('.', pattern = "*.png", full.names = F))
 
 # Loop through the list and display images
 for (img_path in all_sigsum) {

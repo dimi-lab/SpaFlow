@@ -57,8 +57,7 @@ process COLLECTBINDENSITY {
   script:
   """
   Rscript -e "rmarkdown::render('${collect_bin_density_script}', 
-                                  output_file='bin_density_report.html', 
-                                params = list(bin_density_collected='${bin_density_collected.join(",")}'))"
+                                  output_file='bin_density_report.html')"
   """  
 }
 
@@ -80,8 +79,7 @@ process COLLECTSIGSUM {
   script:
   """
   Rscript -e "rmarkdown::render('${collect_sigsum_script}', 
-                                  output_file='sigsum_report.html', 
-                                params = list(sigsum_collected='${sigsum_collected.join(",")}'))"
+                                  output_file='sigsum_report.html')"
   """  
 }
 
