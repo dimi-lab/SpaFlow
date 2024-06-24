@@ -53,6 +53,8 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
     i.  qc_only=true will run only the QC step. It is a good idea to first run QC and check the results before moving on to clustering.
 
     ii. run_scimap=false or run_celesta=false will skip running scimap or CELESTA, respectively.
+
+    iii. export_intermediates=true will create a new directory "intermediates" in your outputs directory, containing the centroids of the seurat clusters from each FOV using the CLR normalization method, and those using the arcsin/Z-score method (AKA the inputs for metaclustering)
 7.  Call main pipeline script: `nextflow run main.nf -params-file=params.yaml`
 
 ------------------------------------------------------------------------
@@ -60,7 +62,7 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 ### Configurable parameters
 
 | object               | value                                                                                                                                                                                                              |
-|-------------|-----------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
 | bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |
