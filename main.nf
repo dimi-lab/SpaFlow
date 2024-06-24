@@ -17,6 +17,7 @@ params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 params.input_dir = "${projectDir}/data"
 params.data_pattern = "${params.input_dir}/*.[tc]sv"
 params.output_dir = "${projectDir}"
+params.export_intermediates = false
 
 process RUNQC {
   maxForks 10
@@ -97,11 +98,13 @@ process RUNSEURAT {
         mode: "copy"
   )
   
-  publishDir(
-        path: "${params.output_dir}/intermediates",
-        pattern: "CLR_seurat_centroids*.csv",
-        mode: "copy"
-  )
+  if (params.export_intermediates) {
+    publishDir(
+          path: "${params.output_dir}/intermediates",
+          pattern: "CLR_seurat_centroids*.csv",
+          mode: "copy"
+    )
+  }
   
   input:
   path clustering_script
@@ -223,11 +226,13 @@ process RUNMETACLUSTERS {
         mode: "copy"
   )
   
-  publishDir(
-        path: "${params.output_dir}/intermediates",
-        pattern: "arcsin_zscore_seurat_centroids.csv",
-        mode: "copy"
-  )
+  if (params.export_intermediates) {
+    publishDir(
+          path: "${params.output_dir}/intermediates",
+          pattern: "arcsin_zscore_seurat_centroids.csv",
+          mode: "copy"
+    )
+  }
   
   input:
   path seurat_metacluster_script
