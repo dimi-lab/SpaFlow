@@ -43,7 +43,7 @@ process RUNQC {
 
 process COLLECTBINDENSITY {
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/qc",
         pattern: "*.html",
         mode: "copy"
   )
@@ -64,7 +64,7 @@ process COLLECTBINDENSITY {
 
 process COLLECTSIGSUM {
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/qc",
         pattern: "*.html",
         mode: "copy"
   )
@@ -87,20 +87,20 @@ process COLLECTSIGSUM {
 process RUNSEURAT {
   maxForks 10
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/seurat",
         pattern: "*.html",
         mode: "copy"
   )
     
   publishDir(
-        path: "${params.output_dir}/output_tables",
+        path: "${params.output_dir}/output_tables/seurat",
         pattern: "seurat_clusters*.csv",
         mode: "copy"
   )
   
   if (params.export_intermediates) {
     publishDir(
-          path: "${params.output_dir}/intermediates",
+          path: "${params.output_dir}/intermediates/seurat",
           pattern: "CLR_seurat_centroids*.csv",
           mode: "copy"
     )
@@ -129,13 +129,13 @@ process RUNSEURAT {
 process RUNCELESTA {
   maxForks 10
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/celesta",
         pattern: "*.html",
         mode: "copy"
     )
     
   publishDir(
-        path: "${params.output_dir}/output_tables",
+        path: "${params.output_dir}/output_tables/celesta",
         pattern: "*.csv",
         mode: "copy"
     )
@@ -161,7 +161,7 @@ process RUNCELESTA {
 process RUNSCIMAP {
   maxForks 10
   publishDir(
-        path: "${params.output_dir}/output_tables",
+        path: "${params.output_dir}/output_tables/scimap",
         pattern: "*.csv",
         mode: "copy"
   )
@@ -189,7 +189,7 @@ process RUNSCIMAP {
 
 process SCIMAPREPORT {
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/scimap",
         pattern: "*.html",
         mode: "copy"
   )
@@ -215,20 +215,20 @@ process SCIMAPREPORT {
 process RUNMETACLUSTERS {
 
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/metacluster",
         pattern: "*.html",
         mode: "copy"
   )
     
   publishDir(
-        path: "${params.output_dir}/output_tables",
+        path: "${params.output_dir}/output_tables/metacluster",
         pattern: "seurat_metaclusters*.csv",
         mode: "copy"
   )
   
   if (params.export_intermediates) {
     publishDir(
-          path: "${params.output_dir}/intermediates",
+          path: "${params.output_dir}/intermediates/metacluster",
           pattern: "arcsin_zscore_seurat_centroids.csv",
           mode: "copy"
     )
@@ -257,13 +257,13 @@ process RUNMETACLUSTERS {
 process RUNCOMPARISON { // This script should output the final cluster files, so the previous ones don't need to output cluster files
 
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/seuratvcelesta",
         pattern: "*.html",
         mode: "copy"
     )
     
   publishDir(
-        path: "${params.output_dir}/output_tables",
+        path: "${params.output_dir}/output_tables/seuratvcelesta",
         pattern: "*.csv",
         mode: "copy"
     )
@@ -289,7 +289,7 @@ process RUNCOMPARISON { // This script should output the final cluster files, so
 process SEURATVSCIMAP {
 
   publishDir(
-        path: "${params.output_dir}/output_reports",
+        path: "${params.output_dir}/output_reports/seuratvscimap",
         pattern: "*.html",
         mode: "copy"
     )
