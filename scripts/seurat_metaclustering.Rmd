@@ -159,7 +159,7 @@ all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(
 centroids_out <- all_normalized_cluster_summaries %>% select(-roi)
 fwrite(centroids_out, "arcsin_zscore_seurat_centroids.csv")
 
-all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(-contains("sd|mean"))
+all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(!contains("sd") & !contains("mean"))
 colnames(all_normalized_cluster_summaries) <- sapply(colnames(all_normalized_cluster_summaries), function(x) sub("_median", "", x))
 ```
 
