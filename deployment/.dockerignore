@@ -1,0 +1,39 @@
+# General Files and Directories
+.git
+.DS_Store
+*.pyc
+*.swp
+*~
+__pycache__
+
+# R-specific Files and Directories
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Temporary Files and Directories
+*.tmp
+*.log
+temp/*
+
+# Large Datasets (if applicable)
+data/*
+*.csv
+*.tsv
+*.parquet
+
+# Configuration Files (unless intentionally included)
+*.ini
+*.cfg
+*.env
+
+# Python-specific Exclusions (if not needed in the container)
+venv/
+*.egg-info
+dist/
+build/
+
+# Docker-specific Exclusions
+Dockerfile.*
+.dockerignore
