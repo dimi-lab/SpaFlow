@@ -1,0 +1,8 @@
+input_dir             : "input"
+output_dir            : "output"
+configfile            : "configs.csv"
+markerconfigfile      : "marker_configs.csv"
+celesta_prior_matrix  : "celesta_prior_matrix.csv"
+qc_only               : false
+run_scimap            : true
+run_celesta           : true
