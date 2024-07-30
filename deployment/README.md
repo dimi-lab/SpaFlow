@@ -2,6 +2,10 @@
 
 Run spaFlow on Google Cloud using Google Batch service.  
 
+## Perform Setup and Test Steps
+
+Run a test Nextflow job to verify your service account permissions.  
+
 1. Verify Logging, Cloud Storage, Google Batch and GCE APIs are enabled on your GCP Project
 2. Run a test job (hello NF) to verify your [GCP service account permissions](https://cloud.google.com/batch/docs/nextflow) and `nextflow.config` file is setup correctly to use Google Batch as a backend provider. 
 3. Clone this repo to a local directory on a GCE instance (VM), unzip the sample data files and build the container (see below)
@@ -13,7 +17,7 @@ Run spaFlow on Google Cloud using Google Batch service.
 
 Use GCP Cloud Build to build a spaFlow container.  
 
-1. Create an Artifact Registry in your GCP project, build and push a spaFlow container using Cloud Build and the `Dockerfile`
+1. Create an Artifact Registry in your GCP project, build and push a spaFlow container using Cloud Build and the `Dockerfile` & `.dockerignore` files
 2. Create a `cloudbuild.yaml` for use in building the container using Cloud Build
 3. Use `gcloud builds submit --tag us-central1-docker.pkg.dev/<GCP-project>/images/spaflow`
 
