@@ -43,3 +43,6 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
+
+#Expose the default port
+EXPOSE 8080
