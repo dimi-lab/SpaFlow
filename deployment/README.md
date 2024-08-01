@@ -11,7 +11,7 @@ Run a test Nextflow job to verify your service account permissions.
 3. Clone this repo to a local directory on a GCE instance (VM), unzip the sample data files and build the container (see below)
 4. Follow the instructions to set up the spaFlow param files - [link](https://github.com/dimi-lab/SpaFlow?tab=readme-ov-file#instructions)
 5. Setup your `nextflow.config` and `main.nf` files to use the appropriate Google Batch resources (see below)
-6. Run spaFlow using the provided command `nextflow run main.nf -params-file=params.yaml -work-dir gs://my-bucket/some/path`
+6. Run spaFlow using the provided command `../nextflow run main.nf -profile gcb`
 
 ## Build Docker Image with Cloud Build 
 
