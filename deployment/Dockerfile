@@ -25,8 +25,9 @@ RUN apt-get install -y openjdk-17-jdk
 RUN curl -s https://get.nextflow.io | bash && \
     mv nextflow /usr/local/bin
 
-# Install Python 
+# Install Python & set PATH
 RUN apt-get install -y python3.8 python3-pip
+RUN ln -s /usr/bin/python3.8 /usr/bin/python
 
 # Python Packages
 RUN pip3 install 'scimap==1.3.2' 'anndata==0.7.8' 'pandas==1.5.3' 'scanpy==1.9.6'    
@@ -46,3 +47,6 @@ WORKDIR /app
 
 #Expose the default port
 EXPOSE 8080
+
+# Set Path for Python & R
+ENV PATH="/usr/bin:${PATH}"

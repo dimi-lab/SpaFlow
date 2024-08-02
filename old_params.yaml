@@ -1,8 +1,0 @@
-input_dir             : ""
-output_dir            : ""
-configfile            : ""
-markerconfigfile      : ""
-celesta_prior_matrix  : ""
-qc_only               : false
-run_scimap            : true
-run_celesta           : true
