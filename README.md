@@ -1,6 +1,6 @@
 <img src="https://github.com/dimi-lab/mxif_clustering_pipeline/blob/main/images/SpaFlow.png" width="1000"/>
 
-Pipeline visualized below
+
 
 <img src="https://github.com/dimi-lab/SpaFlow/blob/main/images/Spaflow_metro.png" width="1000"/>
 
@@ -45,24 +45,27 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 1.  Clone repository to your machine
 2.  Place quantification files in your input directory
     i.  Files should be in the format `<fov_name>.tsv` or `<fov_name>.csv` (e.g. `region_001.tsv`)
-3.  Adjust configuration values in `configs.csv` (see 'Configurable parameters')
+3.  Adjust configuration values in `nextflow.config` (see 'Configurable parameters')
 4.  If running CELESTA, set up `celesta_prior_matrix.csv` with your markers and cell types according to the CELESTA specification (see "Inputs" here: <https://github.com/plevritis-lab/CELESTA>)
-5.  Add desired markers to `marker_configs.csv` - all markers provided must be present in the dataset
+5.  Add desired markers to `nextflow.config` as a comma-separated list - all markers provided must be present in the dataset
     i.  If markers are not provided or if all markers provided are not present in the dataset, the quantification file will search for a default list of markers; if all default markers are not present, all markers in the dataset will be used, excluding DAPI.
-6.  Set up `params.yaml` with your input and output directories, as well as the location of your configuration files.
-    i.  qc_only=true will run only the QC step. It is a good idea to first run QC and check the results before moving on to clustering.
-
-    ii. run_scimap=false or run_celesta=false will skip running scimap or CELESTA, respectively.
-
-    iii. export_intermediates=true will create a new directory "intermediates" in your outputs directory, containing the centroids of the seurat clusters from each FOV using the CLR normalization method, and those using the arcsin/Z-score method (AKA the inputs for metaclustering)
-7.  Call main pipeline script: `nextflow run main.nf -params-file=params.yaml`
+6.  Call main pipeline script: `nextflow run main.nf -c nextflow.config`
 
 ------------------------------------------------------------------------
 
 ### Configurable parameters
 
-| object               | value                                                                                                                                                                                                              |
-|----------------|--------------------------------------------------------|
+| Field               | Description                                                                                                                                                                                                              |
+|-------------|-----------------------------------------------------------|
+| celesta_prior_matrix | Path to CELESTA prior matrix file, if running CELESTA |
+| input_dir            | Path to directory where "output_tables" and "output_figures" directories should be created |
+| data_pattern         | Regex for file extension of input files; default is to accept both CSV and TSV files. |
+| output_dir           | Path to directory where output_reports and output_tables directories should be created |
+| qc_only              | Run only QC steps. It is advised to run the QC alone first and check results before proceeding with clustering analysis. |
+| run_scimap           | Run scimap clustering?
+| run_celesta          | Run CELESTA classification? |
+| run_seurat           | Run Seurat clustering and metaclustering? |
+| export_intermediates | Create a new directory "intermediates" in your outputs directory, containing the centroids of the seurat clusters from each FOV using the CLR normalization method, and those using the arcsin/Z-score method (AKA the inputs for metaclustering) |
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
 | bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |
@@ -75,6 +78,8 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 | min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                                                                            |
 | min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                                                                              |
 | max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                                                                               |
+| scimap_resolution    | Resolution to be used in scimap’s Leiden clustering function (default 0.5). |
+| markers              | Comma-separated list of markers in the dataset that should be used for clustering |
 
 ------------------------------------------------------------------------
 
