@@ -1,7 +1,5 @@
 #!/usr/bin/env nextflow
 
-params.configfile = "${projectDir}/configs.csv"
-params.markerconfigfile = "${projectDir}/marker_configs.csv"
 params.celesta_prior_matrix = "${projectDir}/celesta_prior_matrix.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
 params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
@@ -14,13 +12,74 @@ params.seurat_metacluster_script = "${projectDir}/scripts/seurat_metaclustering.
 params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
 params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 
-params.input_dir = "${projectDir}/data"
-params.data_pattern = "${params.input_dir}/*.[tc]sv"
-params.output_dir = "${projectDir}"
-params.export_intermediates = false
+process WRITECONFIGFILE {
+  input:
+  val sigsum_quantile_high
+  val sigsum_quantile_low
+  val bin_size
+  val density_cutoff
+  val cluster_metric
+  val clustering_res
+  val min_clusters
+  val min_res
+  val max_res
+  val res_step
+  val scimap_resolution
+  val min_metaclusters
+  val max_metaclusters
+  
+  output:
+  path "configs.csv", emit: configfile
+  
+  shell:
+  """
+  echo "object,value" > configs.csv
+  
+  echo "sigsum_quantile_high,!{sigsum_quantile_high}" >> configs.csv
+  echo "sigsum_quantile_low,!{sigsum_quantile_low}" >> configs.csv
+  echo "bin_size,!{bin_size}" >> configs.csv
+  echo "density_cutoff,!{density_cutoff}" >> configs.csv
+  echo "cluster_metric,!{cluster_metric}" >> configs.csv
+  echo "clustering_res,!{clustering_res}" >> configs.csv
+  echo "min_clusters,!{min_clusters}" >> configs.csv
+  echo "min_res,!{min_res}" >> configs.csv
+  echo "max_res,!{max_res}" >> configs.csv
+  echo "res_step,!{res_step}" >> configs.csv
+  echo "scimap_resolution,!{scimap_resolution}" >> configs.csv
+  echo "min_metaclusters,!{min_metaclusters}" >> configs.csv
+  echo "max_metaclusters,!{max_metaclusters}" >> configs.csv
+  """
+}
+
+process WRITEMARKERFILE {
+  input:
+  val markers
+  
+  output:
+  path "marker_configs.csv", emit: markerconfigfile
+  
+  shell:
+  """
+  list=!{markers}
+
+  IFS=',' read -r -a array <<< "\$list"
+  
+  echo "marker" > marker_configs.csv
+
+  for item in "\${array[@]}"; do
+    echo \$item >> marker_configs.csv
+  done
+  """
+}
 
 process RUNQC {
   maxForks 10
+  
+  publishDir(
+    path: "${params.output_dir}/output_tables/qc",
+    pattern: "*.csv",
+    mode: "copy"
+  )
 
   input:
   path quantfile
@@ -43,9 +102,9 @@ process RUNQC {
 
 process COLLECTBINDENSITY {
   publishDir(
-        path: "${params.output_dir}/output_reports/qc",
-        pattern: "*.html",
-        mode: "copy"
+    path: "${params.output_dir}/output_reports/qc",
+    pattern: "*.html",
+    mode: "copy"
   )
   
   input:
@@ -312,28 +371,29 @@ process SEURATVSCIMAP {
 }
 
 
-params.qc_only = false
-params.run_scimap = true
-params.run_celesta = true
-params.run_seurat = true
-
 workflow {
   file_ch = Channel.fromPath(params.data_pattern)
   
-	RUNQC(file_ch, params.qcscript, params.configfile)
+  WRITEMARKERFILE(params.markers)
+  WRITECONFIGFILE(params.sigsum_quantile_high,params.sigsum_quantile_low,
+  params.bin_size,params.density_cutoff,params.cluster_metric,
+  params.clustering_res,params.min_clusters,params.min_res,params.max_res,
+  params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters)
+  
+	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
 	if (!params.qc_only) {
 	  if (params.run_seurat)	{
 	    // Run Seurat with metaclustering
-	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
-	    RUNMETACLUSTERS(params.seurat_metacluster_script, params.configfile, params.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
+	    RUNMETACLUSTERS(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
 	  }  
 	  
 	  if (params.run_celesta) {
 	    // Run CELESTA
-	    RUNCELESTA(params.celestascript, RUNQC.output.all_markers, params.configfile, params.celesta_prior_matrix)
+	    RUNCELESTA(params.celestascript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, params.celesta_prior_matrix)
 	  
 	    if(params.run_seurat) {  	  // combine seurat and CELESTA output for comparison
   	  combined_output = RUNSEURAT.output.seurat_clusters \
@@ -345,7 +405,7 @@ workflow {
 	
 	  if (params.run_scimap) {
 	    // Run Scimap and build report
-	    RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, params.configfile, params.markerconfigfile)
+	    RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot, RUNSCIMAP.output.spatialplot, RUNSCIMAP.output.umap)
 	
 	    if(params.run_seurat) {
@@ -360,12 +420,6 @@ workflow {
 	}
 	  
 }
-
-
-
-
-
-
 
 
 
