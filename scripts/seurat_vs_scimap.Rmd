@@ -64,7 +64,7 @@ colnames(compare_tab) <- c("Scimap cluster", "Seurat cluster", "Freq")
 
 p <- ggplot(compare_tab, aes(x = `Scimap cluster`, y = Freq, fill = `Seurat cluster`)) +
   geom_bar(position="fill", stat="identity") +
-  xlab("metacluster") +
+  xlab("Scimap cluster") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 plot(p)
