@@ -1,7 +1,7 @@
 ---
 title: "Scimap Clustering Report"
 output: html_document
-date: "2024-01-31"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
 ```{r setup, include=FALSE}
