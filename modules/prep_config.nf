@@ -1,4 +1,7 @@
 process WRITECONFIGFILE {
+  cpus 8
+  memory '24 GB'
+
   input:
   val sigsum_quantile_high
   val sigsum_quantile_low
@@ -38,6 +41,9 @@ process WRITECONFIGFILE {
 }
 
 process WRITEMARKERFILE {
+  cpus 8
+  memory '24 GB'
+
   input:
   val markers
   
