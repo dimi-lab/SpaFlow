@@ -1,0 +1,15 @@
+
+# Need to put this into deployment and figure out the path issue (source is ..)
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args: ['-c', 'docker pull us-central1-docker.pkg.dev/MY_GCP_PROJECT/images/spaflow:latest || exit 0']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'us-central1-docker.pkg.dev/MY_GCP_PROJECT/images/spaflow:latest',
+      '--cache-from', 'us-central1-docker.pkg.dev/MY_GCP_PROJECT/images/spaflow:latest',
+      '--file', './deployment/Dockerfile',
+      '.'
+    ]
+images: ['us-central1-docker.pkg.dev/MY_GCP_PROJECT/images/spaflow:latest']
