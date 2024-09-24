@@ -7,48 +7,39 @@ Run spaFlow on Google Cloud using Google Batch service.
 Run a test Nextflow job to verify your service account permissions for Google Batch and GCP resources.  This will ensure your `nextflow.config` file is setup correctly to use Google Batch as a backend provider.  The test job will run a simple `hello` process to verify the setup.  
 
 
-1. Verify Logging, Cloud Storage, Google Batch and GCE APIs are enabled on your GCP Project
-2. Run a test job (hello NF) to verify your [GCP service account permissions](https://cloud.google.com/batch/docs/nextflow) and `nextflow.config` file is setup correctly to use Google Batch as a backend provider. 
-3. Clone this repo to a local directory on a GCE instance (VM), unzip the sample data files and build the container (see below)
-4. Follow the instructions to set up the spaFlow param files - [link](https://github.com/dimi-lab/SpaFlow?tab=readme-ov-file#instructions)
-5. Setup your `nextflow.config` and `main.nf` files to use the appropriate Google Batch resources (see below)
-6. Run spaFlow using the provided command `../nextflow run main.nf -profile gcb` from the spaFlow directory
+1. Clone this repo to a local directory eg on a GCE instance (VM).
+2. Install Nextflow. Follow [Google's instructions to get version 23.04.1](https://cloud.google.com/batch/docs/nextflow#before-you-begin). Put the resulting `nextflow` binary on your path, or, in the repository root directory.
+3. Verify Logging, Cloud Storage, Google Batch and GCE APIs are enabled on your GCP Project.
+4. Make sure you have a bucket created for Nextflow job files.
+5. Run a test job (hello NF) to verify your [GCP service account permissions](https://cloud.google.com/batch/docs/nextflow) and `nextflow.config` file is setup correctly to use Google Batch as a backend provider.
+
+   1. You need at least these for your default GCE service account: logging, cloud storage, cloud build, batch.
+
+6. Follow the instructions to set up the spaFlow param files - [link](https://github.com/dimi-lab/SpaFlow?tab=readme-ov-file#instructions)
+7. Setup your `nextflow.config` and `main.nf` files to use the appropriate Google Batch resources (see below)
+8. Run spaFlow using the provided command `./nextflow run main.nf -profile gcb` from the spaFlow repository root directory. (Or `nextflow` if you put it on your path.)
 
 ## Build Docker Image with Cloud Build 
 
 Use GCP Cloud Build to build a spaFlow container and push it to GCP Artifact Registry.
 
-1. Create an Artifact Registry in your GCP project named `images`, note the region and project ID
-2. To build and push a spaFlow container using Cloud Build and the `Dockerfile` & `.dockerignore` files, change to the directory containing the Dockerfile and spaFlow code
-3. Create a `cloudbuild.yaml` for use in building the container using Cloud Build
-4. Auth to cloud shell and auth to GCP Artifact Registry `gcloud auth configure-docker us-central1-docker.pkg.dev`
-5. Use `gcloud builds submit --tag us-central1-docker.pkg.dev/<YOUR_PROJECT>/images/spaflow --machine-type=E2_HIGHCPU_8`
+1. Create an Artifact Registry in your GCP project named `images`, note the region and project ID.
 
-Example `cloudbuild.yaml` shown below.
+2. Auth to GCP Artifact Registry (using your region):
 
-```
-    steps:
-    - name: 'gcr.io/cloud-builders/docker' 
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/<YOUR_PROJECT>/images/spaflow', '.']
-    images:
-    - 'us-central1-docker.pkg.dev/<YOUR_PROJECT>/images/spaflow'
-```
+   `gcloud auth configure-docker us-central1-docker.pkg.dev`
+
+3. Update cloud-build.yaml with your region & project name.
+
+4. Submit a Cloud Build job; from the root repository directory:
+
+   ````sh
+   gcloud builds submit --config cloud-build.yaml --machine-type=E2_HIGHCPU_8
+   ````
 
 ## Nextflow Config for Google Batch
 
-Your `nextflow.config` file must have the following section to run on [Google Batch](https://www.nextflow.io/docs/latest/google.html#configuration).  
-
-```
-    process {
-    executor = 'google-batch'
-    container = 'your/container:latest'
-    }
-
-    google {
-        project = 'your-project-id'
-        location = 'us-central1'
-    }
-```
+Update the `nextflow.config` file section `profiles` with the correct region and project id and bucket.
 
 Your `main.nf` file should have config information at the task level.  General syntax shown below.
 
@@ -76,3 +67,4 @@ NOTES for enterprise customers:
 - specify a named (project) GCP network and subnet in the nextflow.config file
 - specify 'no external IP' for the GCP VM instances in the nextflow.config file
 - specify both CPU and MEMORY requirements for **each process** in the main.nf file to request a specific machine type
+
