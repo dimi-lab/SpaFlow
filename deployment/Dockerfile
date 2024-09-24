@@ -37,16 +37,17 @@ RUN curl -s https://get.nextflow.io | bash && \
 # Install R packages (ensuring dependencies are handled)
 RUN R --quiet -e "install.packages(c('knitr', 'ggplot2', 'data.table', 'dplyr'))"
 
-# FIXME: remove the repos argument
+# Notes on R dependencies:
+# If we remove the 1st Seurat install, the container fails.
+# If we remove the redundant installs for kableExtra, ComplexHeatmap, clustree, the container fails.
+# We aren't 100% sure why this is … but … this works, so we're keeping it.
 RUN R --quiet -e "install.packages('Seurat', repos = 'https://cloud.r-project.org')"
 RUN R --quiet -e "install.packages(c('progressr', 'kableExtra', 'ComplexHeatmap', 'ggridges', 'clustree', 'pheatmap', 'plyr'))"
 RUN R --quiet -e "install.packages(c('pander', 'CELESTA', 'Rmixmod'))"
 RUN R --quiet -e "install.packages(c('spdep', 'reshape2', 'zeallot'))"
-
 RUN R --quiet -e "install.packages(c('leiden', 'reticulate', 'SeuratObject'))"
 RUN R --quiet -e "install.packages(c('systemfonts', 'ggforce', 'ggraph'))"
 RUN R --quiet -e "install.packages(c('png'))"
-# FIXME: install above
 RUN R --quiet -e "install.packages('Seurat')"
 RUN R --quiet -e "install.packages('BiocManager')"
 RUN R --quiet -e "BiocManager::install('ComplexHeatmap')"
@@ -58,12 +59,9 @@ RUN R --quiet -e "install.packages('Matrix')"
 ##############################################################
 # CELESTA does not work–
 # Seems to succeed installing, BUT, CELESTA_clustering.Rmd fails ("celesta not found")
-# FIXME: move to apt above
-# TODO: try with --no-install-recommends
 # RUN apt-get install -y r-cran-devtools
 # RUN R --quiet -e "install.packages('devtools')"
 # RUN R --quiet -e "install.packages('remotes')"
-
 # RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
 ##############################################################
 
@@ -78,4 +76,3 @@ COPY modules/ /app/modules
 COPY scripts/ /app/scripts
 COPY main.nf /app/main.nf
 COPY nextflow.config /app/nextflow.config
-
