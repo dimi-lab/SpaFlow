@@ -21,6 +21,7 @@
 # Output files from RMarkdown (general html files)
 *.html
 output/
+output_tables/
 
 # Contents of work directory
 work/
@@ -57,3 +58,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# IDEA files
+*.iml
