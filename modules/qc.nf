@@ -1,6 +1,4 @@
 process RUNQC {
-  maxForks 10
-  
   publishDir(
     path: "${params.output_dir}/output_tables/qc",
     pattern: "*.csv",

@@ -1,4 +1,7 @@
 process RUNMETACLUSTERS {
+  cpus 8
+  memory '24 GB'
+
 
   publishDir(
         path: "${params.output_dir}/output_reports/metacluster",
@@ -41,6 +44,8 @@ process RUNMETACLUSTERS {
 }
 
 process SEURATVCELESTA { // This script should output the final cluster files, so the previous ones don't need to output cluster files
+  cpus 8
+  memory '24 GB'
 
   publishDir(
         path: "${params.output_dir}/output_reports/seuratvcelesta",
@@ -73,6 +78,8 @@ process SEURATVCELESTA { // This script should output the final cluster files, s
 }
 
 process SEURATVSCIMAP {
+  cpus 8
+  memory '24 GB'
 
   publishDir(
         path: "${params.output_dir}/output_reports/seuratvscimap",

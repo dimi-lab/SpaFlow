@@ -1,5 +1,7 @@
 process RUNSEURAT {
-  maxForks 10
+  cpus 8
+  memory '24 GB'
+
   publishDir(
         path: "${params.output_dir}/output_reports/seurat",
         pattern: "*.html",
@@ -41,7 +43,9 @@ process RUNSEURAT {
 }
 
 process RUNCELESTA {
-  maxForks 10
+  cpus 8
+  memory '24 GB'
+
   publishDir(
         path: "${params.output_dir}/output_reports/celesta",
         pattern: "*.html",
@@ -73,7 +77,9 @@ process RUNCELESTA {
 }
 
 process RUNSCIMAP {
-  maxForks 10
+  cpus 8
+  memory '24 GB'
+
   publishDir(
         path: "${params.output_dir}/output_tables/scimap",
         pattern: "*.csv",
@@ -102,6 +108,9 @@ process RUNSCIMAP {
 }
 
 process SCIMAPREPORT {
+  cpus 8
+  memory '24 GB'
+
   publishDir(
         path: "${params.output_dir}/output_reports/scimap",
         pattern: "*.html",
