@@ -12,8 +12,10 @@ RUN apt-get install -y \
     git \
     libcurl4-openssl-dev \
     libfontconfig1-dev \
+    libgdal-dev \
     libhdf5-serial-dev \
     libssl-dev \
+    libudunits2-dev \
     libxml2-dev \
     libxt-dev \
     openjdk-17-jdk \
@@ -56,15 +58,8 @@ RUN R --quiet -e "install.packages('clustree')"
 RUN R --quiet -e "install.packages('kableExtra')"
 RUN R --quiet -e "install.packages('Matrix')"
 
-
-##############################################################
-# CELESTA does not work–
-# Seems to succeed installing, BUT, CELESTA_clustering.Rmd fails ("celesta not found")
-# RUN apt-get install -y r-cran-devtools
-# RUN R --quiet -e "install.packages('devtools')"
-# RUN R --quiet -e "install.packages('remotes')"
-# RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
-##############################################################
+RUN R --quiet -e "install.packages('remotes')"
+RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
 
 # Cleanup to reduce image size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -77,3 +72,4 @@ COPY modules/ /app/modules
 COPY scripts/ /app/scripts
 COPY main.nf /app/main.nf
 COPY nextflow.config /app/nextflow.config
+COPY celesta_prior_matrix.csv /app/celesta_prior_matrix.csv
