@@ -1,5 +1,5 @@
 # Base image with Java, R, and Python
-FROM rocker/r-ver:4.2.2
+FROM rocker/r-ver:4.4.1
 
 # Add the deadsnakes PPA to get Python 3.8
 RUN apt-get update && apt-get install -y software-properties-common && \
@@ -41,6 +41,7 @@ RUN R --quiet -e "install.packages(c('knitr', 'ggplot2', 'data.table', 'dplyr'))
 # If we remove the 1st Seurat install, the container fails.
 # If we remove the redundant installs for kableExtra, ComplexHeatmap, clustree, the container fails.
 # We aren't 100% sure why this is … but … this works, so we're keeping it.
+RUN R --quiet -e "install.packages('Matrix', repos = 'https://cloud.r-project.org', version='>= 1.6-4')"
 RUN R --quiet -e "install.packages('Seurat', repos = 'https://cloud.r-project.org')"
 RUN R --quiet -e "install.packages(c('progressr', 'kableExtra', 'ComplexHeatmap', 'ggridges', 'clustree', 'pheatmap', 'plyr'))"
 RUN R --quiet -e "install.packages(c('pander', 'CELESTA', 'Rmixmod'))"
