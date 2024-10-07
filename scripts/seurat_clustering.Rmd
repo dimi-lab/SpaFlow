@@ -469,9 +469,7 @@ clusters_out$roi <- roi
 fwrite(clusters_out, cluster_outfile)
 
 p1 <- DimPlot(codex.obj, label = T) + NoLegend()
-# FIXME: confirm that it's fine to remove flip_xy = FALSE
-# p2 <- ImageDimPlot(codex.obj, flip_xy = FALSE) + scale_x_reverse()
-p2 <- ImageDimPlot(codex.obj) + scale_x_reverse()
+p2 <- ImageDimPlot(codex.obj, flip_xy = FALSE) + scale_x_reverse()
 p1 + p2
 ```
 

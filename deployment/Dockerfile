@@ -1,5 +1,5 @@
 # Base image with Java, R, and Python
-FROM rocker/r-ver:4.2.2
+FROM rocker/r-ver:4.4.1
 
 # Add the deadsnakes PPA to get Python 3.8
 RUN apt-get update && apt-get install -y software-properties-common && \
@@ -12,8 +12,10 @@ RUN apt-get install -y \
     git \
     libcurl4-openssl-dev \
     libfontconfig1-dev \
+    libgdal-dev \
     libhdf5-serial-dev \
     libssl-dev \
+    libudunits2-dev \
     libxml2-dev \
     libxt-dev \
     openjdk-17-jdk \
@@ -41,6 +43,7 @@ RUN R --quiet -e "install.packages(c('knitr', 'ggplot2', 'data.table', 'dplyr'))
 # If we remove the 1st Seurat install, the container fails.
 # If we remove the redundant installs for kableExtra, ComplexHeatmap, clustree, the container fails.
 # We aren't 100% sure why this is … but … this works, so we're keeping it.
+RUN R --quiet -e "install.packages('Matrix', repos = 'https://cloud.r-project.org', version='>= 1.6-4')"
 RUN R --quiet -e "install.packages('Seurat', repos = 'https://cloud.r-project.org')"
 RUN R --quiet -e "install.packages(c('progressr', 'kableExtra', 'ComplexHeatmap', 'ggridges', 'clustree', 'pheatmap', 'plyr'))"
 RUN R --quiet -e "install.packages(c('pander', 'CELESTA', 'Rmixmod'))"
@@ -55,15 +58,8 @@ RUN R --quiet -e "install.packages('clustree')"
 RUN R --quiet -e "install.packages('kableExtra')"
 RUN R --quiet -e "install.packages('Matrix')"
 
-
-##############################################################
-# CELESTA does not work–
-# Seems to succeed installing, BUT, CELESTA_clustering.Rmd fails ("celesta not found")
-# RUN apt-get install -y r-cran-devtools
-# RUN R --quiet -e "install.packages('devtools')"
-# RUN R --quiet -e "install.packages('remotes')"
-# RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
-##############################################################
+RUN R --quiet -e "install.packages('remotes')"
+RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
 
 # Cleanup to reduce image size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -76,3 +72,4 @@ COPY modules/ /app/modules
 COPY scripts/ /app/scripts
 COPY main.nf /app/main.nf
 COPY nextflow.config /app/nextflow.config
+COPY celesta_prior_matrix.csv /app/celesta_prior_matrix.csv
