@@ -534,7 +534,7 @@ normdata$seurat_clusters <- Idents(codex.obj)
 
 cluster_medians <- 
   normdata %>%
-  select(seurat_clusters, all_of(markers_selected)) %>% 
+  select(seurat_clusters, all_of(unname(markers_selected))) %>% 
   group_by(seurat_clusters) %>% 
   summarise_at(markers_selected, list(mean = mean, median = median, sd = sd), na.rm = T, ) %>%
   mutate(seurat_clusters = paste0(roi, "_", seurat_clusters))
