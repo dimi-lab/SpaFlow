@@ -46,8 +46,6 @@ configs_path <- commandArgs(trailingOnly=T)[2]
 ## File paths
 configs <- fread(configs_path, sep=",")
 
-cluster_outfile <- paste0("clusters_", roi, ".csv")
-
 # QC parameters
 sigsum_quantile_high <- as.numeric(configs$value[configs$object == "sigsum_quantile_high"])
 sigsum_quantile_low <- as.numeric(configs$value[configs$object == "sigsum_quantile_low"])
