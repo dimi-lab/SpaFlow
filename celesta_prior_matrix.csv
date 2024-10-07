@@ -1,9 +1,8 @@
-﻿,Lineage_level,Ecad,CD31,CD45,CD3e,CD20,CD68,CD8,CD4,anchor,index
-Epithelium,1_0_1,1,0,0,0,0,0,0,0,0.7,0.5
-Endothelium,1_0_2,NA,1,0,0,0,0,0,0,0.7,0.5
-Immune cells,1_0_3,0,0,1,NA,NA,NA,NA,NA,0.7,0.5
-CD3+ T cells,2_3_4,0,0,NA,1,0,0,NA,NA,0.7,0.5
-B cells,2_3_5,0,0,NA,0,1,0,0,0,0.7,0.5
-Macrophages,2_3_6,0,0,NA,0,0,1,0,0,0.7,0.5
-CD8+ T cells,3_4_7,0,0,NA,NA,0,0,1,0,0.7,0.5
-CD4+ T cells,3_4_8,0,0,NA,NA,0,0,0,1,0.7,0.5
+,Lineage_level,SMA,CD45,CD3,CD20,CD68,CD8a,CD4,anchor,index
+Epithelium,1_0_1,1,0,0,0,0,0,0,0.7,0.5
+Immune cells,1_0_2,0,1,NA,NA,NA,NA,NA,0.7,0.5
+CD3+ T cells,2_2_3,0,NA,1,0,0,NA,NA,0.7,0.5
+B cells,2_2_4,0,NA,0,1,0,0,0,0.7,0.5
+Macrophages,2_2_5,0,NA,0,0,1,0,0,0.7,0.5
+CD8+ T cells,3_3_6,0,NA,NA,0,0,1,0,0.7,0.5
+CD4+ T cells,3_3_7,0,NA,NA,0,0,0,1,0.7,0.5
