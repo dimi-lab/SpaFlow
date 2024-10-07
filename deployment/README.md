@@ -1,8 +1,69 @@
-# Deploy spaFlow on GCP using Google Batch
+# Build & Run spaFlow Container
+
+## Using Docker on your local machine
+
+### Perform Setup and Test Steps
+
+1. Install Nextflow.
+
+   ```sh
+   curl -s -L https://github.com/nextflow-io/nextflow/releases/download/v23.04.1/nextflow | bash
+   ```
+
+   Note that you need 23.04.1.
+
+   Put the resulting `nextflow` binary on your path, or, in the repository root directory.
+
+   Follow the instructions to set up the spaFlow param files - [link](https://github.com/dimi-lab/SpaFlow?tab=readme-ov-file#instructions)
+
+2. Setup your `nextflow.config` files to use the appropriate Docker profile resources (see below). You may also need to change the CPU & Memory settings in the `modules` files (see below)
+3. Run spaFlow using the provided command `./nextflow run main.nf -profile docker` from the spaFlow repository root directory. (Or `nextflow` if you put it on your path.)
+
+### Build Docker image
+
+1. Go to the repository root and run:
+
+   ```sh
+   docker build -f deployment/Dockerfile . -t spaflow:latest
+   ```
+
+   Note that this may take ~30-60 minutes depending on your computer speed.
+
+### NextFlow config for local Docker
+
+1. In nextflow.config, update the `docker` profile to use the appropriate container name. If you used `spaflow:latest`:
+
+   ```
+   docker {
+     process.container = 'spaflow:latest'
+     docker.enabled = true
+   }
+   ```
+
+2. The default CPU allocation is 8 CPUs, and Memory is 24 GB. (See the top of each module file). If your Docker runtime doesn't have this many resources, simply reduce. Eg:
+
+   ```
+     cpus 2
+     memory '6 GB'
+   ```
+
+### Run Docker image
+
+1. Go to the repository root and run:
+
+   ```
+   nextflow run main.nf -c nextflow.config -profile docker
+   ```
+
+   Or `./nextflow` if you put it in the repository root.
+
+2. Output files will be written into: `output_reports` and `output_tables`.
+
+## On GCP using Google Batch
 
 Run spaFlow on Google Cloud using Google Batch service.  
 
-## Perform Setup and Test Steps
+### Perform Setup and Test Steps
 
 Run a test Nextflow job to verify your service account permissions for Google Batch and GCP resources.  This will ensure your `nextflow.config` file is setup correctly to use Google Batch as a backend provider.  The test job will run a simple `hello` process to verify the setup.  
 
@@ -19,7 +80,7 @@ Run a test Nextflow job to verify your service account permissions for Google Ba
 7. Setup your `nextflow.config` and `main.nf` files to use the appropriate Google Batch resources (see below)
 8. Run spaFlow using the provided command `./nextflow run main.nf -profile gcb` from the spaFlow repository root directory. (Or `nextflow` if you put it on your path.)
 
-## Build Docker Image with Cloud Build 
+### Build Docker Image with Cloud Build 
 
 Use GCP Cloud Build to build a spaFlow container and push it to GCP Artifact Registry.
 
@@ -37,7 +98,7 @@ Use GCP Cloud Build to build a spaFlow container and push it to GCP Artifact Reg
    gcloud builds submit --config cloud-build.yaml --machine-type=E2_HIGHCPU_8
    ````
 
-## Nextflow Config for Google Batch
+### Nextflow Config for Google Batch
 
 Update the `nextflow.config` file section `profiles` with the correct region and project id and bucket.
 
