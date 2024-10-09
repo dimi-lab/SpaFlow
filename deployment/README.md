@@ -74,8 +74,8 @@ Run a test Nextflow job to verify your service account permissions for Google Ba
 4. Make sure you have a bucket created for Nextflow job files.
 5. Run a test job (hello NF) to verify your [GCP service account permissions](https://cloud.google.com/batch/docs/nextflow) and `nextflow.config` file is setup correctly to use Google Batch as a backend provider.
 
-   1. You need at least these for your default GCE service account: logging, cloud storage, cloud build, batch.
-
+   1. You need at least these for your default GCE service account: Logs Writer, Storage Admin, Batch Admin, Batch Agent Reporter.
+   2. Your account (or whichever creates the build) also needs Cloud Build Admin.
 6. Follow the instructions to set up the spaFlow param files - [link](https://github.com/dimi-lab/SpaFlow?tab=readme-ov-file#instructions)
 7. Setup your `nextflow.config` and `main.nf` files to use the appropriate Google Batch resources (see below)
 8. Run spaFlow using the provided command `./nextflow run main.nf -profile gcb` from the spaFlow repository root directory. (Or `nextflow` if you put it on your path.)
