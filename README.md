@@ -147,6 +147,8 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 
 ## Example Data
 
+`full_spaflow_example.zip` contains a full example of input and output files for SpaFlow, as well as scripts for creating a QuPath project, exporting quantification files, and viewing SpaFlow cluster output in QuPath. This example was generated from the [ovarian TMA dataset](https://immunoatlas.org/MYCB/240802-1/MYCB24004/) using regions 002, 004, and 005.
+
 Within the data directory of this repository, there is a sample dataset with four quantification files generated using images from the [Multiplexed Imaging Mass Cytometry of Chemokine Milieus in Metastatic Melanoma](https://zenodo.org/records/6004986) dataset (Hoch et al. 2022). The templates for configs.csv and marker_configs.csv have been set up for this dataset, therefore you can run a test of the pipeline by cloning the repo, unzipping the files into the data directory, and running `nextflow run main.nf` from the top-level directory.
 
 Hoch, T., Schulz, D., Eling, N., Martínez-Gómez, J., Levesque, M., & Bodenmiller, B. (2022). Multiplexed Imaging Mass Cytometry of Chemokine Milieus in Metastatic Melanoma - Raw Data. <https://doi.org/10.5281/zenodo.6004986>
