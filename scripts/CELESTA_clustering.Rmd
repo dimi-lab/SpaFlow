@@ -39,17 +39,12 @@ allmarkers_outfile <- commandArgs(trailingOnly=T)[1]
 roi <- tools::file_path_sans_ext(basename(allmarkers_outfile))
 roi <- sub("all_markers_clean_", "", roi)
 configs_path <- commandArgs(trailingOnly=T)[2]
-
-
-# allmarkers_outfile <- "output_tables/all_markers_clean_reg002.csv"
-# roi <- tools::file_path_sans_ext(basename(allmarkers_outfile))
-# roi <- sub("all_markers_clean_", "", roi)
-# configs_path <- "configs.csv"
+celesta_matrix_path <- commandArgs(trailingOnly=T)[3]
 ```
 
 
 ```{r}
-prior_marker_info <- fread('celesta_prior_matrix.csv', sep=",")
+prior_marker_info <- fread(celesta_matrix_path, sep=",")
 
 anchor_high <- prior_marker_info$anchor
 index_high <- prior_marker_info$index

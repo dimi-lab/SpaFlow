@@ -72,7 +72,7 @@ process RUNCELESTA {
   roi = all_markers.baseName.replace("all_markers_clean_", "")
   
   """
-  Rscript -e "rmarkdown::render('${celesta_script}', output_file='celesta_report_${roi}.html')" $all_markers $configs
+  Rscript -e "rmarkdown::render('${celesta_script}', output_file='celesta_report_${roi}.html')" $all_markers $configs $celesta_prior_matrix
   """
 }
 
