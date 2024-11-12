@@ -52,7 +52,7 @@ process WRITEMARKERFILE {
   
   shell:
   """
-  list=!{markers}
+  list="${markers}"
 
   IFS=',' read -r -a array <<< "\$list"
   

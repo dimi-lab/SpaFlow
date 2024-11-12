@@ -50,11 +50,14 @@ anchor_high <- prior_marker_info$anchor
 index_high <- prior_marker_info$index
 
 prior_marker_info <- prior_marker_info %>% dplyr::select(-anchor, -index)
+
+colnames(prior_marker_info) <- sub("/", "_", colnames(prior_marker_info))
 ```
 
 ```{r}
 imaging_data <- fread(allmarkers_outfile)
 colnames(imaging_data) <- sub("\u00B5", "u", colnames(imaging_data))
+colnames(imaging_data) <- sub("/", "_", colnames(imaging_data))
 imaging_data <- imaging_data %>% filter(qc == "Cell") %>% select(X = `Centroid X um`, Y = `Centroid Y um`, contains("Cell: Mean"))
 
 colnames(imaging_data) <- sapply(colnames(imaging_data), function(x) sub(": Cell: Mean", "", x))
