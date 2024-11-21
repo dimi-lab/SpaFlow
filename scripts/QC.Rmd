@@ -83,6 +83,16 @@ colnames(roi_df) <- sub("\u00B5", "u", colnames(roi_df)) # replace mu with u
 # Extract the means for each marker
 means_only_df <- roi_df %>% select(contains("Cell: Mean"))
 
+# Remove rows with NAs in marker quant
+if (any(is.na(means_only_df))) {
+  roi_df <- roi_df[complete.cases(means_only_df)]
+  means_only_df <- roi_df %>% select(contains("Cell: Mean"))
+  cat("\n***WARNING: Rows containing NaN values have been removed from your dataset. Please double-check your quantification files.***", file="nacheck.txt")
+} else {
+  cat("", file="nacheck.txt")
+}
+
+
 # Get sum of all signals for each cell
 means_only_df$sigsum <- rowSums(means_only_df)
 

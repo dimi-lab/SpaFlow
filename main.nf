@@ -36,6 +36,9 @@ workflow {
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
+	RUNQC.output.NACHECK
+  .view()
+	
 	if (!params.qc_only) {
 	  if (params.run_seurat)	{
 	    // Run Seurat with metaclustering
