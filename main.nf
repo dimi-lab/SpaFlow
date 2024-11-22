@@ -36,6 +36,17 @@ workflow {
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	
+	// Print a message if there are NAs in the dataset
+	RUNQC.output.NACHECK
+    .branch { v ->
+        nacheck_ok: v == "0"
+        nacheck_warn: v == "1"
+    }
+    .set { result }
+
+  result.nacheck_warn.view { v -> "***WARNING: Rows containing NaN values have been removed from your dataset. Please double-check your quantification files.***" }
+
+	
 	if (!params.qc_only) {
 	  if (params.run_seurat)	{
 	    // Run Seurat with metaclustering
