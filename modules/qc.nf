@@ -15,12 +15,15 @@ process RUNQC {
 	path "bin_density_${roi}.png", emit: bin_density
 	path "sigsum_${roi}.png", emit: sigsum
   path "all_markers_clean_${roi}.csv", emit: all_markers
+  path "nacheck.txt"
+  env NACHECK, emit: NACHECK
 	
 	script:
 	roi = quantfile.baseName
 	
 	"""
 	Rscript -e "rmarkdown::render('${QC_scriptpath}', output_file='QC_report_${quantfile.baseName}.html')"  $quantfile $configs
+	NACHECK=`cat nacheck.txt`
 	"""
 }
 
