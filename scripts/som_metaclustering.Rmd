@@ -1,0 +1,293 @@
+---
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+  pdf_document: default
+params:
+  som_num_clusters: 8
+
+title: "Self-Organizing Maps Metaclustering"
+subtitle: "`r params$som_num_clusters` SOM Metaclusters"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+### Summary
+A self-organizing map (SOM) is an unsupervised machine learning technique used to produce a low-dimensional representation of a higher-dimensional data set while preserving the topological structure of the data. 
+
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+requiredPackages <- c("tidyverse", "plotly", "RColorBrewer", "viridis", "ggpubr", "ComplexHeatmap", "circlize", "cluster",
+                      "kohonen", "grid", "gridExtra", "RColorBrewer", "dendextend", "stats", "data.table")
+for (package in requiredPackages) { #Installs packages if not yet installed
+  if (!requireNamespace(package, quietly = TRUE))
+  install.packages(package)
+}
+
+library(tidyverse)
+
+library(viridis)
+library(ComplexHeatmap)
+library(kohonen)
+library(data.table)
+
+`%nin%` <- Negate(`%in%`)
+
+arcsine_transform <- function(x) {
+  y <- x / max(x)
+  asin(sqrt(y))
+}
+
+zscorenorm <- function(marker) {
+  mu = mean(marker)
+  sd = sd(marker)
+  (marker - mu) / sd
+}
+som_num_clusters <- as.numeric(params$som_num_clusters)
+set.seed(123)
+```
+
+
+```{r}
+configs <- fread("configs.csv", sep=",")
+marker_configs <- fread("marker_configs.csv", sep=",")
+
+lhs <- list.files('.', pattern="CLR_seurat_centroids*", full.names = T)
+clcCentroids <- NULL
+for(fh in lhs){
+  tmpC <- read_csv(fh,show_col_types = FALSE)
+  clcCentroids <- bind_rows(clcCentroids, tmpC)
+}
+
+allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
+cluster_files <- list.files('.', pattern = "^seurat_clusters_.*.csv", full.names = T)
+
+roi_df <- fread(allmarker_files[1])
+
+som_grid_x <- as.numeric(configs$value[configs$object == "som_grid_x"])
+som_grid_y <- as.numeric(configs$value[configs$object == "som_grid_y"])
+
+# Default marker set
+default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
+
+## Choose markers for clustering
+if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(grepl(x, colnames(roi_df)))))) {
+  markers_selected <- marker_configs$marker[!grepl("DAPI", marker_configs$marker)]
+} else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
+  markers_selected <- default_markers
+} else {
+  markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
+  markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
+}
+markers_selected <- markers_selected[markers_selected != ""]
+
+num_rows <- nrow(clcCentroids)
+
+grid_size <- som_grid_x * som_grid_y
+```
+
+The following parameters are being used in this report:
+
+* Number of data points (n): `r num_rows`
+* Grid Size: `r som_grid_x` * `r som_grid_y` = `r grid_size`
+* Number of clusters: `r som_num_clusters`
+
+```{r}
+
+# Check grid size
+if(grid_size > num_rows){
+  print(paste0("Grid size cannot exceed the number of rows in this dataset (n=", num_rows,"). Please reduce the grid size using somgrid_x and somgrid_y in the config file and try again."))
+  #warning("Grid size cannot exceed the number of rows in this dataset (n=", num_rows,". Please reduce the grid size using somgrid_x and somgrid_y in the config file and try again.")
+  knitr::knit_exit()
+}
+
+# Check cluster size
+if(som_num_clusters < 1 || som_num_clusters > grid_size){
+  print(som_num_clusters)
+  print(paste0("The number of SOM clusters must be between 1 and ", grid_size, ". Please update min_somclusters and max_somclusters in the config file"))
+  #warning("The number of SOM clusters must be between 1 and ", grid_size, ". Please update min_somclusters and max_somclusters in the config file")
+  knitr::knit_exit()
+}
+
+```
+### SOM Model Training & Clustering {.tabset}
+A grid of size `r som_grid_x` X `r som_grid_y` is used for training the SOM model, with Seurat clusters from each ROI used as input data. The ideal grid size depends on the amount of data being trained. A good starting point is $$5 * \sqrt{n}$$ 
+
+#### SOM Neigbor Distances
+This plot is a representation of the grid used in the SOM model, and the color visualizes the distances between neighboring nodes. This is a visual representation of how data points cluster together on the SOM grid.
+
+```{r}
+
+sample.size <- length(unique(clcCentroids$seurat_clusters))
+
+df_normalized <- clcCentroids %>% select(-seurat_clusters)
+
+# Set up the SOM grid
+som_grid <- somgrid(xdim = som_grid_x, ydim = som_grid_y, topo = "rectangular")  # 2x4 grid for 8 niches
+
+# Train the SOM
+som_model <- som(as.matrix(df_normalized), grid = som_grid, rlen = 100, alpha = c(0.05, 0.01))
+
+# # Plot the SOM
+# plot(som_model, type = "codes", main = "SOM Codebook Vectors")
+# plot(som_model, type = "changes", main = "SOM Training Progress")
+# plot(som_model, type = "counts", main = "Node Counts")
+plot(som_model, type = "dist.neighbours", main = "SOM Neighbour Distances")
+
+```
+
+#### SOM Clustering
+
+This is a representation of how the SOM grid is clustered. The number of clusters used here is `r som_num_clusters`. The circles in each node represent the number of data points that belong to the node.
+
+```{r}
+# Cluster the SOM nodes
+som_clusters <- cutree(hclust(dist(som_model$codes[[1]])), k = som_num_clusters)
+plot(som_model, type = "mapping", bgcol = rainbow(som_num_clusters)[som_clusters], main = "SOM Clustering")
+add.cluster.boundaries(som_model, som_clusters)
+
+# Assign each data point to a SOM node
+som_node_assignments <- map(som_model, as.matrix(df_normalized))$unit.classif
+
+# Map SOM nodes to clusters
+data_clusters <- som_clusters[som_node_assignments]
+
+# Add cluster assignments to the original dataframe
+clcCentroids$SOMCluster <- data_clusters
+
+
+```
+
+
+### Marker mean and standard deviation heatmap
+```{r fig.show="hold", out.width="50%"}
+
+t2 <- clcCentroids %>% select(SOMCluster, paste0(markers_selected,"_mean")) %>% 
+  gather(Marker, CentiValue, -SOMCluster) %>% 
+  group_by(SOMCluster,Marker) %>% summarise(mu=mean(CentiValue), sd=sd(CentiValue)) %>% mutate(SOMClusterID = paste0("#",SOMCluster)) %>% mutate(Marker = gsub('_mean','',Marker))
+
+
+
+ggplot(t2, aes(x=SOMClusterID, y=Marker, fill=mu))+geom_tile()+scale_fill_viridis()
+
+ggplot(t2, aes(x=SOMClusterID, y=Marker, fill=sd))+geom_tile()+scale_fill_viridis(option="B")
+
+
+```
+
+### SOM Metaclusters (Scaled by row)
+
+```{r fig.height=8, fig.width=15}
+
+
+smSub <- clcCentroids %>% 
+  mutate(SOMClusterID = paste0("#",SOMCluster)) %>%
+  select(SOMClusterID, paste0(markers_selected,"_mean"))
+colnames(smSub) <- gsub("_mean","",colnames(smSub)) 
+
+  
+ #smSub <- t2 %>% ungroup() %>% select(Marker, mu, SOMClusterID) %>% spread(Marker, mu )
+ mat2 <- smSub %>% select(-SOMClusterID) %>% as.matrix() %>% t() %>% pheatmap:::scale_rows()
+
+#ha = HeatmapAnnotation(FOV = smSub$roi,
+#                         ClusterID = anno_text(textannot, gp = gpar(fontsize = 8)), 
+#                         show_legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE))
+  
+  mat2[is.nan(mat2)] <- 0
+  colnames(mat2) <- smSub$SOMClusterID
+  som_cluster_names <- smSub %>% distinct(SOMClusterID) %>% arrange(SOMClusterID)
+  
+  Heatmap(mat2, #col = col_fun,
+          name = "SOM",
+          #col=viridis(100),
+          row_names_gp = gpar(fontsize = 10),
+          #top_annotation = ha,
+          # bottom_annotation = ba,
+          column_split = colnames(mat2) ,
+          show_column_names = FALSE,
+          border = TRUE)
+  
+  
+
+
+```
+
+
+### SOM Metaclusters - mean expression
+```{r}
+smSub <- t2 %>% ungroup() %>% select(Marker, mu, SOMClusterID) %>% spread(Marker, mu )
+mat2 <- smSub %>% select(-SOMClusterID) %>% as.matrix() %>% t() %>% pheatmap:::scale_rows()
+
+  
+mat2[is.nan(mat2)] <- 0
+colnames(mat2) <- smSub$SOMClusterID
+  
+Heatmap(mat2, #col = col_fun,
+          name = "SOM",
+          #col=viridis(100),
+          row_names_gp = gpar(fontsize = 10),
+          # top_annotation = ha,
+          # bottom_annotation = ba,
+          border = TRUE)
+  
+```
+
+
+
+
+
+
+```{r}
+  # f <- fhs002[1]
+  for(f in allmarker_files){
+    myQuant <- read_csv(f) %>% distinct()
+    fullN <- myQuant %>% count()
+    deDupN <- myQuant %>% dplyr::select(`Centroid X um`,`Centroid Y um`) %>% distinct() %>% count()
+    bool <- fullN == deDupN
+    #print(paste("Whole Quant Count = ",fullN,"    DeDup Count = ",deDupN,"   ",bool))
+    myQuant['SourceFile'] <- basename(f)
+    if(!bool){
+      break
+    }
+    thisFOV <- gsub('.csv', '', basename(f))
+    thisFOV <- gsub('all_markers_clean_', '', thisFOV)
+    #print(thisFOV)
+    #print(' ')
+    
+    seuratNames_t  <- read_csv( grep(thisFOV, list.files('.', pattern="seurat_clusters*", full.names = T ), value = T)[1]  ) %>%     select(-roi)
+    merged <- merge(myQuant, seuratNames_t, by.x=c('Centroid X um','Centroid Y um'), by.y=c("x","y"), all.x=T)
+    
+    merged <- merged %>% 
+      mutate(seurat_clusters_num = gsub('cluster_','',seurat_clusters)) %>%
+      mutate(MergeCluster = paste0(roi,'_',seurat_clusters_num)) %>%
+      mutate(cluster = paste0(roi,'_',seurat_clusters))
+  
+
+    mtTbls <- clcCentroids %>% select(seurat_clusters, SOMCluster)
+
+    annotDataset <- merge(merged, mtTbls, by.x="MergeCluster", by.y = "seurat_clusters", all.x=T)
+
+    annotDataset <- annotDataset %>% 
+        select(`Centroid X um`,`Centroid Y um`, seurat_clusters, roi, cluster, SOMCluster) %>%
+        rename(x = `Centroid X um`, y = `Centroid Y um`, som_cluster = SOMCluster)
+    
+    filename = paste0("som_metaclusters_", thisFOV, "_", som_num_clusters ,"clusters.csv")
+    fwrite(annotDataset, filename)
+
+  }
+
+```

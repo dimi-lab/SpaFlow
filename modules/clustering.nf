@@ -31,7 +31,7 @@ process RUNSEURAT {
   output:
   path "seurat_report_${roi}.html"
   path "seurat_clusters_${roi}.csv", emit: seurat_clusters_noid
-  path "CLR_seurat_centroids_${roi}.csv"
+  path "CLR_seurat_centroids_${roi}.csv", emit: seurat_centroids
   tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
