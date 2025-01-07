@@ -13,15 +13,41 @@ roi <- sub("umap_", "", tools::file_path_sans_ext(basename(roi)))
 
 ## roi: `r roi`
 
-## UMAP of clusters
+
+## KMeans calculation of Optimal Number of Clusters
 ```{r results='asis'}
-cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
+cat(paste0('<img src="', "optimal_cluster_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
 ```
+
 
 ## Image plot of clusters
 ```{r results='asis'}
 cat(paste0('<img src="', "spatialplot_", roi, ".png", '" width="500"/><br>'))
 ```
+
+
+### ARI (Adjusted Rand Index): 
+
+Measures clustering similarity by comparing pairs of points. A value of 1 indicates perfect agreement, while 0 means random clustering.
+
+
+
+### NMI (Normalized Mutual Information): 
+
+Measures mutual dependence between clusters. Higher values indicate greater similarity.
+
+
+### Cross-tabulation: 
+
+Provides a table showing how KMeans clusters overlap with Leiden clusters.
+
+
+
+## UMAP of clusters
+```{r results='asis'}
+cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
+```
+
 
 ## Heatmap of clusters
 ```{r results='asis'}

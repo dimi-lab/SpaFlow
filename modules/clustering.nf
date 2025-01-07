@@ -97,6 +97,7 @@ process RUNSCIMAP {
   tuple val(roi), path("scimap_clusters_${roi}.csv") , emit: scimap_clusters
   path "matrixplot_${roi}.png", emit: matrixplot
   path "spatialplot_${roi}.png", emit: spatialplot
+  path "optimal_cluster_${roi}.png", emit: optimalplot
   path "umap_${roi}.png", emit: umap
     
   script:
