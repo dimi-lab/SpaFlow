@@ -31,19 +31,21 @@ A self-organizing map (SOM) is an unsupervised machine learning technique used t
 
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 
-requiredPackages <- c("tidyverse", "plotly", "RColorBrewer", "viridis", "ggpubr", "ComplexHeatmap", "circlize", "cluster",
-                      "kohonen", "grid", "gridExtra", "RColorBrewer", "dendextend", "stats", "data.table")
+requiredPackages <- c("viridis", "ComplexHeatmap", "kohonen", "data.table", 
+                      "tidyr", "dplyr", "ggplot2")
 for (package in requiredPackages) { #Installs packages if not yet installed
   if (!requireNamespace(package, quietly = TRUE))
   install.packages(package)
 }
 
-library(tidyverse)
-
 library(viridis)
 library(ComplexHeatmap)
 library(kohonen)
 library(data.table)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
 
 `%nin%` <- Negate(`%in%`)
 
@@ -69,8 +71,8 @@ marker_configs <- fread("marker_configs.csv", sep=",")
 lhs <- list.files('.', pattern="CLR_seurat_centroids*", full.names = T)
 clcCentroids <- NULL
 for(fh in lhs){
-  tmpC <- read_csv(fh,show_col_types = FALSE)
-  clcCentroids <- bind_rows(clcCentroids, tmpC)
+  tmpC <- fread(fh)
+  clcCentroids <- rbind(clcCentroids, tmpC)
 }
 
 allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
@@ -111,7 +113,6 @@ The following parameters are being used in this report:
 # Check grid size
 if(grid_size > num_rows){
   print(paste0("Grid size cannot exceed the number of rows in this dataset (n=", num_rows,"). Please reduce the grid size using somgrid_x and somgrid_y in the config file and try again."))
-  #warning("Grid size cannot exceed the number of rows in this dataset (n=", num_rows,". Please reduce the grid size using somgrid_x and somgrid_y in the config file and try again.")
   knitr::knit_exit()
 }
 
@@ -119,7 +120,6 @@ if(grid_size > num_rows){
 if(som_num_clusters < 1 || som_num_clusters > grid_size){
   print(som_num_clusters)
   print(paste0("The number of SOM clusters must be between 1 and ", grid_size, ". Please update min_somclusters and max_somclusters in the config file"))
-  #warning("The number of SOM clusters must be between 1 and ", grid_size, ". Please update min_somclusters and max_somclusters in the config file")
   knitr::knit_exit()
 }
 
@@ -190,33 +190,38 @@ ggplot(t2, aes(x=SOMClusterID, y=Marker, fill=sd))+geom_tile()+scale_fill_viridi
 ```
 
 ### SOM Metaclusters (Scaled by row)
-
 ```{r fig.height=8, fig.width=15}
 
 
 smSub <- clcCentroids %>% 
   mutate(SOMClusterID = paste0("#",SOMCluster)) %>%
-  select(SOMClusterID, paste0(markers_selected,"_mean"))
+  select(SOMClusterID, seurat_clusters, paste0(markers_selected,"_mean"))
 colnames(smSub) <- gsub("_mean","",colnames(smSub)) 
 
-  
- #smSub <- t2 %>% ungroup() %>% select(Marker, mu, SOMClusterID) %>% spread(Marker, mu )
- mat2 <- smSub %>% select(-SOMClusterID) %>% as.matrix() %>% t() %>% pheatmap:::scale_rows()
+mat2 <- smSub %>% select(-c(SOMClusterID, seurat_clusters)) %>% as.matrix() %>% t() %>% pheatmap:::scale_rows()
 
-#ha = HeatmapAnnotation(FOV = smSub$roi,
-#                         ClusterID = anno_text(textannot, gp = gpar(fontsize = 8)), 
-#                         show_legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE))
+smSub$roi <- sub("_[^_]+$", "", smSub$seurat_clusters)
+
+## Annotation for cluster
+textannot <- if(length(allmarker_files) > 15) {
+    rep(" ", length(smSub$roi))
+    } else {
+      smSub$roi
+    }
+
+ha = HeatmapAnnotation(FOV = smSub$roi,
+                        ClusterID = anno_text(textannot, gp = gpar(fontsize = 8)),
+                        show_legend = FALSE)
   
-  mat2[is.nan(mat2)] <- 0
-  colnames(mat2) <- smSub$SOMClusterID
-  som_cluster_names <- smSub %>% distinct(SOMClusterID) %>% arrange(SOMClusterID)
+mat2[is.nan(mat2)] <- 0
+colnames(mat2) <- smSub$SOMClusterID
+som_cluster_names <- smSub %>% distinct(SOMClusterID) %>% arrange(SOMClusterID)
   
-  Heatmap(mat2, #col = col_fun,
+Heatmap(mat2,
           name = "SOM",
           #col=viridis(100),
           row_names_gp = gpar(fontsize = 10),
-          #top_annotation = ha,
-          # bottom_annotation = ba,
+          top_annotation = ha,
           column_split = colnames(mat2) ,
           show_column_names = FALSE,
           border = TRUE)
@@ -236,12 +241,10 @@ mat2 <- smSub %>% select(-SOMClusterID) %>% as.matrix() %>% t() %>% pheatmap:::s
 mat2[is.nan(mat2)] <- 0
 colnames(mat2) <- smSub$SOMClusterID
   
-Heatmap(mat2, #col = col_fun,
+Heatmap(mat2,
           name = "SOM",
           #col=viridis(100),
           row_names_gp = gpar(fontsize = 10),
-          # top_annotation = ha,
-          # bottom_annotation = ba,
           border = TRUE)
   
 ```
@@ -254,21 +257,19 @@ Heatmap(mat2, #col = col_fun,
 ```{r}
   # f <- fhs002[1]
   for(f in allmarker_files){
-    myQuant <- read_csv(f) %>% distinct()
+    myQuant <- fread(f) %>% distinct()
     fullN <- myQuant %>% count()
     deDupN <- myQuant %>% dplyr::select(`Centroid X um`,`Centroid Y um`) %>% distinct() %>% count()
     bool <- fullN == deDupN
-    #print(paste("Whole Quant Count = ",fullN,"    DeDup Count = ",deDupN,"   ",bool))
-    myQuant['SourceFile'] <- basename(f)
+
+    myQuant[, SourceFile := basename(f)]
     if(!bool){
       break
     }
     thisFOV <- gsub('.csv', '', basename(f))
     thisFOV <- gsub('all_markers_clean_', '', thisFOV)
-    #print(thisFOV)
-    #print(' ')
     
-    seuratNames_t  <- read_csv( grep(thisFOV, list.files('.', pattern="seurat_clusters*", full.names = T ), value = T)[1]  ) %>%     select(-roi)
+    seuratNames_t  <- fread( grep(thisFOV, list.files('.', pattern="seurat_clusters*", full.names = T ), value = T)[1]  ) %>%     select(-roi)
     merged <- merge(myQuant, seuratNames_t, by.x=c('Centroid X um','Centroid Y um'), by.y=c("x","y"), all.x=T)
     
     merged <- merged %>% 
