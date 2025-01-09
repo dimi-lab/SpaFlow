@@ -11,6 +11,7 @@ params.scimap_report_script = "${projectDir}/scripts/scimap_report.Rmd"
 params.seurat_metacluster_script = "${projectDir}/scripts/seurat_metaclustering.Rmd"
 params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
 params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
+params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
 
 
 // Load modules
@@ -20,7 +21,7 @@ include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
 
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
 
-include {RUNMETACLUSTERS; SEURATVCELESTA; SEURATVSCIMAP } from './modules/post_clustering.nf'
+include {RUNMETACLUSTERS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS } from './modules/post_clustering.nf'
 
 
 workflow {
@@ -31,7 +32,7 @@ workflow {
   params.bin_size,params.density_cutoff,params.cluster_metric,
   params.clustering_res,params.min_clusters,params.min_res,params.max_res,
   params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters,
-  params.globals_maxsize_MB)
+  params.som_grid_x,params.som_grid_y,params.min_som_clusters,params.max_som_clusters,params.globals_maxsize_MB)
   
 	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
@@ -53,6 +54,11 @@ workflow {
 	    // Run Seurat with metaclustering
 	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    RUNMETACLUSTERS(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+
+		if(params.run_som)  {
+                  somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
+		  RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
+		}
 	  }  
 	  
 	  if (params.run_celesta) {

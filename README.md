@@ -22,6 +22,7 @@
     -   pheatmap 1.0.12
     -   plyr 1.8.9
     -   pander 0.6.5
+    -   kohonen 3.0.12
     -   CELESTA 0.0.0.9000
         -   Rmixmod 2.1.9
 
@@ -65,6 +66,7 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 | run_scimap           | Run scimap clustering?
 | run_celesta          | Run CELESTA classification? |
 | run_seurat           | Run Seurat clustering and metaclustering? |
+| run_som              | Run elf-organizing maps (som) metaclustering?  |
 | export_intermediates | Create a new directory "intermediates" in your outputs directory, containing the centroids of the seurat clusters from each FOV using the CLR normalization method, and those using the arcsin/Z-score method (AKA the inputs for metaclustering) |
 | sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
 | sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
@@ -79,6 +81,10 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 | min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                                                                              |
 | max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                                                                               |
 | scimap_resolution    | Resolution to be used in scimap’s Leiden clustering function (default 0.5). |
+| som_grid_x           | X dimention of the grid for the SOM metaclustering (default 4) |
+| som_grid_y           | Y dimention of the grid for the SOM  metaclustering (default 4) |
+| min_som_clusters     | Starting number of SOM metaclusters to create (default 5)
+| max_som_clusters     | Ending number of SOM metaclusters to create (default 10)
 | markers              | Comma-separated list of markers in the dataset that should be used for clustering |
 
 ------------------------------------------------------------------------
@@ -106,6 +112,12 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
     -   Marker vs metacluster heatmaps; barplots for proportion of ROI per metacluster
 -   `output_tables/<roi>_mapped_metaclusters_n_metaclusters.csv`
     -   Clusters and metaclusters mapped to cell coordinates - includes artifacts
+
+**som_metaclustering.Rmd**
+-  `output_reports/som_metacluster/som_metaclusters_<num-of-clusters>_report.html`
+    -   SOM metaclustering output using <num-of-clusters> clusters; SOM grid; Marker vs SOM metaclusters heatmaps
+-  `output_tables/som_metacluster/som_metaclusters_<roi>_<num-of-clusters>clusters.csv`
+    -   Seurat clusters and SOM metaclusters mapped to cell coordinates - includes artifacts
 
 **CELESTA_clustering.Rmd**
 
