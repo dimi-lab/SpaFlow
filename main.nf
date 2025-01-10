@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+import java.nio.file.*
+
 params.celesta_prior_matrix = "${projectDir}/celesta_prior_matrix.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
 params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
@@ -71,6 +73,15 @@ workflow {
   	  
   	  SEURATVCELESTA(params.seurat_vs_celesta_script, combined_output)
 	    }
+	    
+	  }
+	  
+	  if(params.save_celesta_matrix) {
+	    def userName = System.getenv("USER")
+	    def dateTime = new Date().format("yyyyMMdd_HHmmss")
+	    def targetFileName = "celesta_matrix_${userName}_${dateTime}.csv"
+	    def targetPath = Paths.get(params.celesta_matrix_save_dir, targetFileName)
+	    Files.copy(Paths.get(params.celesta_prior_matrix), targetPath)
 	  }
 	
 	  if (params.run_scimap) {
