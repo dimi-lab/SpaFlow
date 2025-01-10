@@ -78,7 +78,6 @@ workflow {
 	      // Combine seurat and scimap output for comparison
 	      combined_output_seurat_scimap = RUNSEURAT.output.seurat_clusters \
           | combine(RUNSCIMAP.output.scimap_clusters, by:0)
-	  
 	     SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
 	    }
 	  }
