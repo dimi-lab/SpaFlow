@@ -16,6 +16,7 @@ process WRITECONFIGFILE {
   val scimap_resolution
   val min_metaclusters
   val max_metaclusters
+  val globals_maxsize_MB
   
   output:
   path "configs.csv", emit: configfile
@@ -37,6 +38,7 @@ process WRITECONFIGFILE {
   echo "scimap_resolution,!{scimap_resolution}" >> configs.csv
   echo "min_metaclusters,!{min_metaclusters}" >> configs.csv
   echo "max_metaclusters,!{max_metaclusters}" >> configs.csv
+  echo "globals_maxsize_MB,!{globals_maxsize_MB}" >> configs.csv
   """
 }
 

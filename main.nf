@@ -30,7 +30,8 @@ workflow {
   WRITECONFIGFILE(params.sigsum_quantile_high,params.sigsum_quantile_low,
   params.bin_size,params.density_cutoff,params.cluster_metric,
   params.clustering_res,params.min_clusters,params.min_res,params.max_res,
-  params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters)
+  params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters,
+  params.globals_maxsize_MB)
   
 	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
