@@ -93,11 +93,15 @@ process RUNSCIMAP {
   path marker_configs
   
   output:
-  path "scimap_clusters_${roi}.csv"
   tuple val(roi), path("scimap_clusters_${roi}.csv") , emit: scimap_clusters
-  path "matrixplot_${roi}.png", emit: matrixplot
-  path "spatialplot_${roi}.png", emit: spatialplot
-  path "umap_${roi}.png", emit: umap
+  path "matrixplot_kmeans_${roi}.png", emit: matrixplot_K
+  path "matrixplot_leiden_${roi}.png", emit: matrixplot_L
+  path "optimal_cluster_${roi}.png", emit: optimalplot
+  path "show_kmeans_${roi}.png", emit: spatialplot_K
+  path "show_leiden_${roi}.png", emit: spatialplot_L
+  path "umap_kmeans_${roi}.png", emit: umap_K
+  path "umap_leiden_${roi}.png", emit: umap_L
+  path "cluster_scores_${roi}.json", emit: clustermeterics
     
   script:
   roi = all_markers.baseName.replace("all_markers_clean_", "")
@@ -119,18 +123,22 @@ process SCIMAPREPORT {
   
   input:
   path scimap_report_script
-  path matrixplot
-  path spatialplot
-  path umap
-  
+  path matrixplot_K
+  path matrixplot_L
+  path optimalplot
+  path spatialplot_K
+  path spatialplot_L
+  path umap_K
+  path umap_L
+  path clustermeterics
+    
   output:
   path "*.html"
   
   script:
-  roi = umap.baseName.replace("umap_", "")
+  roi = umap_L.baseName.replace("umap_leiden_", "")
   
   """
-  Rscript -e "rmarkdown::render('${scimap_report_script}', 
-                                  output_file='scimap_report_${roi}.html')"
+  Rscript -e "rmarkdown::render('${scimap_report_script}', output_file='scimap_report_${roi}.html')"
   """  
 }
