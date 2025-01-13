@@ -43,46 +43,6 @@ process RUNMETACLUSTERS {
   
 }
 
-process RUNSOMCLUSTERS {
-  cpus 8
-  memory '24 GB'
-
-
-  publishDir(
-        path: "${params.output_dir}/output_reports/som_metacluster",
-        pattern: "*.html",
-        mode: "copy"
-  )
-
-  publishDir(
-        path: "${params.output_dir}/output_tables/som_metacluster",
-        pattern: "som_metaclusters*.csv",
-        mode: "copy"
-  )
-
-  input:
-  path seurat_som_script
-  path configs
-  path marker_configs
-  path allmarkers_collected
-  path allcentroids_collected
-  path seurat_clusters_noid_collected
-  val num_clusters
-  
-
-  output:
-  path "som_metaclusters*.html"
-  path "som_metaclusters*.csv", optional: true
-
-  script:
-  """
-  Rscript -e "rmarkdown::render('${seurat_som_script}', params = list(som_num_clusters = '${num_clusters}'),
-                                output_file='som_metaclusters_${num_clusters}_report.html')"
-  """
-
-}
-
-
 process SEURATVCELESTA { // This script should output the final cluster files, so the previous ones don't need to output cluster files
   cpus 8
   memory '24 GB'
