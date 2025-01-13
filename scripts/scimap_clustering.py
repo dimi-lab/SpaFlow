@@ -120,7 +120,7 @@ with open(f'cluster_scores_{roi}.json', 'w') as fp:
 # UMAP
 sc.pp.neighbors(adata, n_neighbors=30, n_pcs=10)
 sc.tl.umap(adata)
-sc.pl.umap(adata, color=['leiden'], cmap='vlag', use_raw=False, s=30, save=f'_kmeans_{roi}.png', show=False)
+sc.pl.umap(adata, color=['kClusters'], cmap='vlag', use_raw=False, s=30, save=f'_kmeans_{roi}.png', show=False)
 sc.pl.umap(adata, color=['leiden'], cmap='vlag', use_raw=False, s=30, save=f'_leiden_{roi}.png', show=False)
 
 # Heatmaps
