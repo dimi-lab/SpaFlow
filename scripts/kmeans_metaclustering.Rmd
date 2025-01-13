@@ -1,0 +1,246 @@
+---
+title: "K-means Metaclustering for MxIF"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged 
+    geometry: margin=2cm
+    highlight: textmate
+    theme: journal
+    fig_crop: false
+    toc: true
+    toc_float: true
+  pdf_document: default
+---
+<style type="text/css">
+.main-container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+requiredPackages <- c("data.table", "plyr", "dplyr", "knitr", "ComplexHeatmap", "ggplot2", "pander")
+for (package in requiredPackages) { #Installs packages if not yet installed
+  if (!requireNamespace(package, quietly = TRUE))
+  install.packages(package)
+}
+
+library(data.table)
+library(plyr)
+library(dplyr)
+library(knitr)
+library(ComplexHeatmap)
+library(ggplot2)
+library(pander)
+
+set.seed(123)
+```
+
+Be sure to check the distribution of ROIs across metaclusters to verify that the ROIs are approximately evenly represented within the metaclusters. Unbalanced ROI proportions indicate unresolved batch effects between ROIs. **If there are more than 15 ROIs, plot legends will be omitted as they become uninterpretable.**
+
+```{r}
+allmarker_files <- list.files('.', pattern = "^all_markers_clean_*", full.names = T)
+cluster_files <- list.files('.', pattern = "^scimap_clusters_.*.csv", full.names = T)
+configs <- fread("configs.csv", sep=",")
+marker_configs <- fread("marker_configs.csv", sep=",")
+
+roi_df <- fread(allmarker_files[1])
+
+
+# n_metaclusters <- as.numeric(configs$value[configs$object == "n_metaclusters"])
+min_metaclusters <- as.numeric(configs$value[configs$object == "min_metaclusters"])
+max_metaclusters <- as.numeric(configs$value[configs$object == "max_metaclusters"])
+metacluster_range <- min_metaclusters:max_metaclusters
+
+# Default marker set
+default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
+
+## Choose markers for clustering
+if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(grepl(x, colnames(roi_df)))))) {
+  markers_selected <- marker_configs$marker[!grepl("DAPI", marker_configs$marker)]
+} else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
+  markers_selected <- default_markers
+} else {
+  markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
+  markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
+}
+markers_selected <- markers_selected[markers_selected != ""]
+```
+
+
+```{r}
+arcsine_transform <- function(x) {
+  y <- x / max(x)
+  asin(sqrt(y))
+}
+
+zscorenorm <- function(marker) {
+  mu = mean(marker)
+  sd = sd(marker)
+  (marker - mu) / sd
+}
+
+get_normalized_counts <- function(roi_allmarkers) {
+  counts <- fread(roi_allmarkers)
+  counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"), "imageid" = "roi")
+  counts <- counts %>% select(imageid, all_of(setdiff(colnames(.), "imageid"))) %>% select(-contains("DAPI"))
+
+  cols <- grep("Median", colnames(counts), value = T)
+
+  for (j in cols) set(counts, j = j, value = arcsine_transform(counts[[j]]))
+  for (j in cols) set(counts, j = j, value = zscorenorm(counts[[j]]))
+
+  counts
+}
+
+## join clusters and quant data
+get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
+  normcounts <- get_normalized_counts(roi_allmarkers)
+  clusters <- fread(roi_clusters) %>%
+    rename("x" = "X_centroid", "y" = "Y_centroid")
+  imageid <- clusters$imageid[1]
+  
+  cluster_medians <- 
+    inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
+    filter(kmeans != "Artifact") %>%
+    select(x, y, imageid, kmeans, all_of(paste0(markers_selected, ": Cell: Median"))) %>% 
+    group_by(kmeans) %>% 
+    summarise_at(paste0(markers_selected, ": Cell: Median"), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
+    mutate(kmeans = paste0(imageid, "_", kmeans), imageid = imageid)
+  
+  data.frame(cluster_medians, check.names = F)
+}
+
+make_heatmap <- function(dat, n_metaclusters) {
+  smSub <- dat %>%
+    mutate_all(funs(replace(., is.na(.), 0))) %>%
+    ungroup()
+  
+  # Create matrix to be used in the heatmap
+  mat2 <- smSub %>%
+    select(-c(kmeans, imageid)) %>% replace(is.na(.), 0) %>%
+    # as.matrix() %>% t() %>% pheatmap:::scale_rows()
+    as.matrix() %>% pheatmap:::scale_rows() %>% t()
+  
+  ## Annotation for cluster
+  textannot <- if(length(allmarker_files) > 15) {
+    rep(" ", length(smSub$kmeans))
+    } else {
+      smSub$kmeans
+    }
+  
+  ha = HeatmapAnnotation(FOV = smSub$imageid,
+                         ClusterID = anno_text(textannot, gp = gpar(fontsize = 8)), 
+                         show_legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE))
+  
+  mat2[is.nan(mat2)] <- 0
+  colnames(mat2) <- smSub$cluster
+  
+  Heatmap(mat2, #col = col_fun,
+          name = "mat",
+          row_names_gp = gpar(fontsize = 10),
+          top_annotation = ha,
+          # bottom_annotation = ba,
+          column_km = n_metaclusters,
+          border = TRUE)
+}
+```
+
+
+```{r fig.height=8, fig.width=10}
+all_normalized_cluster_summaries <- mapply(get_normalized_cluster_summary, allmarker_files, cluster_files, SIMPLIFY = F)
+all_normalized_cluster_summaries <- bind_rows(all_normalized_cluster_summaries, .id = "column_label")
+all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(-column_label)
+
+centroids_out <- all_normalized_cluster_summaries %>% select(-imageid)
+fwrite(centroids_out, "arcsin_zscore_kmeans_centroids.csv")
+
+all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(!contains("sd") & !contains("_mean"))
+colnames(all_normalized_cluster_summaries) <- sapply(colnames(all_normalized_cluster_summaries), function(x) sub("_median", "", x))
+```
+
+```{r}
+df_list <- lapply(cluster_files, function(x) fread(x))
+
+names(df_list) <- basename(cluster_files)
+```
+
+
+```{r fig.height=8, fig.width=12, results='asis'}
+for (i in seq_along(metacluster_range)) {
+  
+  n_metaclusters <- metacluster_range[i]
+  
+  pandoc.header(paste(n_metaclusters, "metaclusters"),level=2,style=c("atx","setext"))
+  
+  set.seed(123)
+  
+  cat("\n")
+  pandoc.header("Heatmap", level = 3)
+  
+  ht <- draw(make_heatmap(all_normalized_cluster_summaries, n_metaclusters))
+  
+  dat <- all_normalized_cluster_summaries
+  
+  smSub <- dat %>%
+    mutate_all(funs(replace(., is.na(.), 0))) %>%
+    ungroup()
+  
+  get_metacluster_table <- function(metacluster) {
+    metaclust_ind <- unlist(ht@ht_list$mat@column_order_list[[metacluster]])
+    dat <- data.frame(metacluster = metacluster, cluster = smSub$kmeans[metaclust_ind], imageid = smSub$imageid[metaclust_ind])
+    dat
+  }
+  
+  all_metacluster_counts <- ldply(as.character(1:n_metaclusters), get_metacluster_table)
+  
+  
+  meta_orig_tab <- data.frame(table(all_metacluster_counts$metacluster, all_metacluster_counts$imageid))
+  colnames(meta_orig_tab) <- c("metacluster", "ROI", "Freq")
+  
+  cat("\n")
+  pandoc.header("Distribution of ROIs across metaclusters", level = 3)
+  
+  p <- ggplot(meta_orig_tab, aes(x = factor(metacluster, levels = as.character(1:n_metaclusters)), y = Freq, fill = ROI)) +
+    geom_bar(position="fill", stat="identity", show.legend = ifelse(length(allmarker_files) > 15, FALSE, TRUE)) +
+    theme_bw() +
+    xlab("metacluster")
+  
+  plot(p)
+  cat('\n')
+  
+  ## Use all_metacluster_counts to map back to coordinates (in cluster files) and write out mapped metacluster file
+  all_metacluster_counts$metacluster <- paste0("kmeans_meta_", all_metacluster_counts$metacluster)
+  
+  for (j in cluster_files) {
+    single_df <- df_list[[basename(j)]]
+    single_df$cluster <- paste(single_df$imageid, single_df$kmeans, sep = "_")
+    meta_mapped <- left_join(single_df, all_metacluster_counts, by = c("cluster" = "cluster", "imageid" = "imageid")) #%>%
+      #select(x, y, imageid, kmeans, cluster, metacluster)
+    meta_mapped$metacluster[grepl("Artifact", meta_mapped$cluster)] <- "Artifact"
+    colnames(meta_mapped)[colnames(meta_mapped) == "metacluster"] <- paste0("kmeans_metaclusters_", metacluster_range[i])
+    df_list[[basename(j)]] <- meta_mapped
+    
+  }
+  
+  for (i in seq_along(df_list)) {
+    file_name <- sub("scimap_clusters", "kmeans_metaclusters", names(df_list[i]))
+
+    fwrite(df_list[[i]], file_name)
+  }
+}
+
+```
+
+
+
+
+
+
+
+

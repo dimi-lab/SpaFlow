@@ -11,6 +11,8 @@ params.celestascript = "${projectDir}/scripts/CELESTA_clustering.Rmd"
 params.scimapscript = "${projectDir}/scripts/scimap_clustering.py"
 params.scimap_report_script = "${projectDir}/scripts/scimap_report.Rmd"
 params.seurat_metacluster_script = "${projectDir}/scripts/seurat_metaclustering.Rmd"
+params.leiden_metacluster_script = "${projectDir}/scripts/leiden_metaclustering.Rmd"
+params.kmeans_metacluster_script = "${projectDir}/scripts/kmeans_metaclustering.Rmd"
 params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
 params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
@@ -23,7 +25,7 @@ include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
 
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
 
-include {RUNMETACLUSTERS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS } from './modules/post_clustering.nf'
+include {RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS } from './modules/post_clustering.nf'
 
 
 workflow {
@@ -55,7 +57,7 @@ workflow {
 	    // *** Run Seurat with metaclustering *** //
 	    if (params.run_seurat)	{
 	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
-	    RUNMETACLUSTERS(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
+	    RUNMETACLUSTERSSEURAT(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
 
 		if(params.run_som)  {
                   somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
@@ -89,7 +91,8 @@ workflow {
 	    RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot_K, RUNSCIMAP.output.matrixplot_L, RUNSCIMAP.output.optimalplot, \
 	     RUNSCIMAP.output.spatialplot_K, RUNSCIMAP.output.spatialplot_L, RUNSCIMAP.output.umap_K, RUNSCIMAP.output.umap_L, RUNSCIMAP.output.clustermeterics)
-	    RUNMETACLUSTERS(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSCIMAP.output.scimap_clusters.collect())
+	    RUNMETACLUSTERSLEIDEN(params.leiden_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSCIMAP.output.scimap_clusters_noid.collect())
+	    RUNMETACLUSTERSKMEANS(params.kmeans_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSCIMAP.output.scimap_clusters_noid.collect())
 	
 	    if(params.run_seurat) {
 	      // Combine seurat and scimap output for comparison

@@ -1,23 +1,23 @@
-process RUNMETACLUSTERS {
+process RUNMETACLUSTERSSEURAT {
   cpus 8
   memory '24 GB'
 
 
   publishDir(
-        path: "${params.output_dir}/output_reports/metacluster",
+        path: "${params.output_dir}/output_reports/seurat_metacluster",
         pattern: "*.html",
         mode: "copy"
   )
     
   publishDir(
-        path: "${params.output_dir}/output_tables/metacluster",
+        path: "${params.output_dir}/output_tables/seurat_metacluster",
         pattern: "seurat_metaclusters*.csv",
         mode: "copy"
   )
   
   if (params.export_intermediates) {
     publishDir(
-          path: "${params.output_dir}/intermediates/metacluster",
+          path: "${params.output_dir}/intermediates/seurat_metacluster",
           pattern: "arcsin_zscore_seurat_centroids.csv",
           mode: "copy"
     )
@@ -39,6 +39,95 @@ process RUNMETACLUSTERS {
   """
   Rscript -e "rmarkdown::render('${seurat_metacluster_script}', 
                                 output_file='seurat_metacluster_report.html')"
+  """
+  
+}
+
+process RUNMETACLUSTERSLEIDEN {
+  cpus 8
+  memory '24 GB'
+
+
+  publishDir(
+        path: "${params.output_dir}/output_reports/scimap_metacluster",
+        pattern: "*.html",
+        mode: "copy"
+  )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables/scimap_metacluster",
+        pattern: "leiden_metaclusters*.csv",
+        mode: "copy"
+  )
+  
+  if (params.export_intermediates) {
+    publishDir(
+          path: "${params.output_dir}/intermediates/scimap_metacluster",
+          pattern: "arcsin_zscore_leiden_centroids.csv",
+          mode: "copy"
+    )
+  }
+  
+  input:
+  path scimap_metacluster_script
+  path configs
+  path marker_configs
+  path allmarkers_collected
+  path scimap_output
+  
+  output:
+  path "arcsin_zscore_leiden_centroids.csv"
+  path "leiden_metacluster_report.html"
+  path "leiden_metaclusters*.csv"
+  
+  script:
+  """
+  Rscript -e "rmarkdown::render('${scimap_metacluster_script}', 
+                                output_file='leiden_metacluster_report.html')"
+  """
+}
+
+process RUNMETACLUSTERSKMEANS {
+  cpus 8
+  memory '24 GB'
+
+
+  publishDir(
+        path: "${params.output_dir}/output_reports/scimap_metacluster",
+        pattern: "*.html",
+        mode: "copy"
+  )
+    
+  publishDir(
+        path: "${params.output_dir}/output_tables/scimap_metacluster",
+        pattern: "kmeans_metaclusters*.csv",
+        mode: "copy"
+  )
+  
+  if (params.export_intermediates) {
+    publishDir(
+          path: "${params.output_dir}/intermediates/scimap_metacluster",
+          pattern: "arcsin_zscore_kmeans_centroids.csv",
+          mode: "copy"
+    )
+  }
+  
+  input:
+  path scimap_metacluster_script
+  path configs
+  path marker_configs
+  path allmarkers_collected
+  path scimap_output
+  
+  output:
+  path "arcsin_zscore_kmeans_centroids.csv"
+  path "kmeans_metacluster_report.html"
+  path "kmeans_metaclusters*.csv"
+  
+  script:
+  """
+  Rscript -e "rmarkdown::render('${scimap_metacluster_script}', 
+                                output_file='kmeans_metacluster_report.html')"
   """
   
 }
