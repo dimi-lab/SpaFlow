@@ -95,6 +95,7 @@ if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(
   markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
   markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
 }
+markers_selected <- gsub("_", "-", markers_selected)
 markers_selected <- markers_selected[markers_selected != ""]
 
 num_rows <- nrow(clcCentroids)
