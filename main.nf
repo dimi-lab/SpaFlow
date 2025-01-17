@@ -32,7 +32,7 @@ workflow {
   params.clustering_res,params.min_clusters,params.min_res,params.max_res,
   params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters)
   
-	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile)
+	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile, params.filter_column)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
 	

@@ -9,6 +9,7 @@ process RUNQC {
   path quantfile
   path QC_scriptpath
   path configs
+  val filter_column
 
 	output:
 	path "QC_report_${roi}.html"
@@ -22,7 +23,7 @@ process RUNQC {
 	roi = quantfile.baseName
 	
 	"""
-	Rscript -e "rmarkdown::render('${QC_scriptpath}', output_file='QC_report_${quantfile.baseName}.html')"  $quantfile $configs
+	Rscript -e "rmarkdown::render('${QC_scriptpath}', output_file='QC_report_${quantfile.baseName}.html')"  $quantfile $configs $filter_column
 	NACHECK=`cat nacheck.txt`
 	"""
 }
