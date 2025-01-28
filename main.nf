@@ -148,8 +148,8 @@ workflow {
         GENERATE_ANNDATA_META4(params.anndata_create_script, JoinedAll)
         
 	      
+	  }
 	}
-	  
 }
 
 

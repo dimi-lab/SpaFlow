@@ -2,6 +2,7 @@ process RUNSEURAT {
   cpus 8
   memory '24 GB'
 
+  if (params.export_intermediates) {
   publishDir(
         path: "${params.output_dir}/output_reports/seurat",
         pattern: "*.html",
@@ -13,9 +14,7 @@ process RUNSEURAT {
         pattern: "seurat_clusters*.csv",
         mode: "copy"
   )
-  
-  if (params.export_intermediates) {
-    publishDir(
+  publishDir(
           path: "${params.output_dir}/intermediates/seurat",
           pattern: "CLR_seurat_centroids*.csv",
           mode: "copy"
@@ -80,11 +79,13 @@ process RUNSCIMAP {
   cpus 8
   memory '24 GB'
 
+    if (params.export_intermediates) {
   publishDir(
         path: "${params.output_dir}/output_tables/scimap",
         pattern: "*.csv",
         mode: "copy"
   )
+  }
   
   input:
   path scimapscript
@@ -116,11 +117,13 @@ process SCIMAPREPORT {
   cpus 8
   memory '24 GB'
 
+  if (params.export_intermediates) {
   publishDir(
         path: "${params.output_dir}/output_reports/scimap",
         pattern: "*.html",
         mode: "copy"
   )
+    }
   
   input:
   path scimap_report_script

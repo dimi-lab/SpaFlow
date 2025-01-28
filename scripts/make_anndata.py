@@ -1,111 +1,78 @@
 # Load necessary libraries
-import sys
+import sys, os
 import pandas as pd
 import anndata as ad
 import numpy as np
-import scipy.sparse as sparse
+import glob
 
 ## Should be able to store very large sizes:
 ## https://github.com/scverse/scanpy_usage/tree/master/170522_visualizing_one_million_cells
 
-def create_anndata_from_dfs(expression_df, metadata_df, spatial_df=None, image=None, image_key = "image"):
-    """
-    Creates an AnnData object from Pandas DataFrames.
+sample = sys.argv[1]
 
-    Args:
-        expression_df: DataFrame containing gene expression data (rows: cells, cols: genes).
-        metadata_df: DataFrame containing cell metadata (rows: cells, cols: metadata).
-        spatial_df (optional): DataFrame containing spatial coordinates (rows: cells, cols: X, Y).
-        image (optional): numpy array containing the image
-        image_key (optional): key to save the image to adata.uns or adata.obsm. Default is "image".
+def clean_headers(df):
+    header = [e.replace(':', '') for e in df.columns.values.tolist()]
+    header = [e.replace('/', '') for e in header]
+    header = [e.replace('^', '') for e in header]
+    header = [e.replace('.', '') for e in header]
+    header = [e.replace('µ', 'u') for e in header]
+    header = [e.replace(' ', '_') for e in header]
+    header = [e.replace('-02_', '_') for e in header]
+    df.columns = header
+    return df
+            
+# 1. Load all_markers_clean
+markers_file = glob.glob(f"all_markers_clean_{sample}.csv")[0]  # Ensure only one file is matched
+originaldf = pd.read_csv(markers_file, sep=',', low_memory=False) # changed to comma separated
+all_markers_clean_means = originaldf.filter(like=": Mean") # changed filter to like
 
-    Returns:
-        An AnnData object or None if there is an error.
-    """
-
-    try:
-        # Check for matching indices
-        if not expression_df.index.equals(metadata_df.index):
-            raise ValueError("Expression and metadata DataFrames must have matching indices.")
-        if spatial_df is not None and not expression_df.index.equals(spatial_df.index):
-            raise ValueError("Expression and spatial DataFrames must have matching indices.")
-
-        # Create AnnData object
-        adata = ad.AnnData(expression_df)
-
-        # Add metadata to .obs
-        adata.obs = metadata_df
-
-        # Add spatial coordinates to .obsm
-        if spatial_df is not None:
-            adata.obsm["spatial"] = spatial_df[["X", "Y"]].values
-
-        #Add image to .uns or .obsm
-        if image is not None:
-            if image.ndim == 2 or image.ndim == 3: #check if image is valid
-                if adata.n_obs == image.shape[0]:
-                    adata.obsm[image_key] = image
-                    print("Image saved in .obsm")
-                else:
-                    adata.uns[image_key] = image
-                    print("Image saved in .uns")
-            else:
-                raise ValueError("Image must be a 2D (grayscale) or 3D (RGB) numpy array")
-
-        return adata
-
-    except ValueError as e:
-        print(f"Error creating AnnData object: {e}")
-        return None
-
-# Example usage:
-# Create dummy dataframes
-np.random.seed(0)
-n_cells = 100
-n_genes = 20
-expression_data = np.random.rand(n_cells, n_genes)
-expression_df = pd.DataFrame(expression_data, columns=[f"gene_{i}" for i in range(n_genes)])
-expression_df.index = [f"cell_{i}" for i in range(n_cells)]
+originaldf = clean_headers(originaldf)
+all_markers_clean_means = clean_headers(all_markers_clean_means)
 
 
-metadata = {'cell_type': np.random.choice(['A', 'B', 'C'], size=n_cells),
-            'batch': np.random.choice(['1','2'], size=n_cells)}
+# 2. Create AnnData object
+adata = ad.AnnData(all_markers_clean_means, dtype=all_markers_clean_means.values.dtype) # added dtype
+adata.var_names = all_markers_clean_means.columns.to_list()
 
-metadata_df = pd.DataFrame(metadata, index=expression_df.index)
 
-spatial_data = {'X': np.random.randint(0, 100, size=n_cells),
-                'Y': np.random.randint(0, 100, size=n_cells)}
-spatial_df = pd.DataFrame(spatial_data, index=expression_df.index)
+# 3. Add spatial coordinates and other obsm data
+x_col = 'Centroid_X_um' if 'Centroid_X_um' in originaldf.columns else 'x'
+y_col = 'Centroid_Y_um' if 'Centroid_Y_um' in originaldf.columns else 'y'
+adata.obsm["spatial"] = originaldf[[x_col, y_col]].to_numpy()
 
-image = np.random.randint(0, 256, size=(n_cells, 50, 50, 3)).astype(np.uint8)
+area_cols = ['Nucleus_Area_um2', 'Cell_Area_um2', 'Cell_Length_um', 'Cell_Circularity', 'Cell_Solidity', 'Cell_Max_diameter_um','Cell_Min_diameter_um']
+for col in area_cols:
+    if col in originaldf.columns:
+        sNom = col.replace('_um2','').replace('_um','')
+        adata.obsm[sNom] = originaldf[[col]].to_numpy()
+        continue #stop on first hit
 
-# Create AnnData object
-adata = create_anndata_from_dfs(expression_df, metadata_df, spatial_df, image)
+# 4. Add metadata from other CSVs
+metacluster_files = glob.glob(f"*metaclusters_{sample}*.csv")
+for file in metacluster_files:
 
-if adata:
-    print(adata)
-    # Save the AnnData object
-    adata.write_h5ad("merged_data.h5ad")
-    print("AnnData object saved to merged_data.h5ad")
+    df_meta = pd.read_csv(file, sep=',', low_memory=False) # changed to comma separated
+    df_meta = clean_headers(df_meta)
 
-# Example without spatial data
-adata_no_spatial = create_anndata_from_dfs(expression_df, metadata_df, image = image)
-if adata_no_spatial:
-    print(adata_no_spatial)
-    adata_no_spatial.write_h5ad('no_spatial_data.h5ad')
-    print("AnnData object with no spatial data saved to no_spatial_data.h5ad")
+    x_col_meta = 'X_centroid' if 'X_centroid' in df_meta.columns else 'x'
+    y_col_meta = 'Y_centroid' if 'Y_centroid' in df_meta.columns else 'y'
 
-# Example without image data
-adata_no_image = create_anndata_from_dfs(expression_df, metadata_df, spatial_df)
-if adata_no_image:
-    print(adata_no_image)
-    adata_no_image.write_h5ad('no_image_data.h5ad')
-    print("AnnData object with no image data saved to no_image_data.h5ad")
+    #check if centroids match
+    merged_df = pd.merge(originaldf[[x_col, y_col]], df_meta[[x_col_meta, y_col_meta]], left_on=[x_col,y_col], right_on=[x_col_meta, y_col_meta], how='left')
+    if merged_df.shape[0] != originaldf.shape[0]:
+        raise ValueError(f"Centroids in {file} do not match all_markers_clean centroids")
 
-# Example with different image key
-adata_diff_image_key = create_anndata_from_dfs(expression_df, metadata_df, spatial_df, image, image_key="my_image")
-if adata_diff_image_key:
-    print(adata_diff_image_key)
-    adata_diff_image_key.write_h5ad('diff_image_key.h5ad')
-    print("AnnData object with different image key saved to diff_image_key.h5ad")
+    for col in df_meta.columns:
+        if "cluster" in col.lower(): #case insensitive matching
+            adata.obs[col] = df_meta[col].values
 
+# 5. Add imageid and spatial coordinates to obs
+adata.uns["Slide"] = sample # changed to sample
+adata.obs["imageid"] = pd.Categorical(originaldf["roi"])
+adata.obs["X"] = adata.obsm['spatial'][:, 0]
+adata.obs["Y"] = adata.obsm['spatial'][:, 1]
+
+print(adata)
+
+adata.write_h5ad(f"all_meta_clustering_{sample}.h5ad")
+print(f"AnnData object for {sample} saved.")

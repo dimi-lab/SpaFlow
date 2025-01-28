@@ -245,13 +245,13 @@ process GENERATE_ANNDATA_META4 {
   
   input:
   path anndatascript
-  tuple val(sample), val(path1), val(path2), val(path3), val(path4), val(path5)
+  tuple val(sample), path(path1), path(path2), path(path3), path(path4), path(path5)
   
   output:
-  path "all_meta_clustering.h5ad"
+  path "all_meta_clustering_*.h5ad"
 
   """
-  python make_anndata.py
+  python make_anndata.py $sample
   """
 
 }
