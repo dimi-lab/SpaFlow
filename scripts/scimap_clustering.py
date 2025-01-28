@@ -129,6 +129,19 @@ sc.pl.matrixplot(adata, var_names=adata.var.index, groupby='leiden', dendrogram=
 sc.pl.matrixplot(adata, var_names=adata.var.index, groupby='kClusters', dendrogram=True,
                  use_raw=False, cmap="icefire", standard_scale='var', save=f'kmeans_{roi}.png', show=False)
 
-# Save results
-adata.obs.to_csv(f"scimap_clusters_{roi}.csv", index=False)
+# Write out coordinates and clusters
+# adata.obs.to_csv(f"scimap_clusters_{roi}.csv", index=False) # This doesn't include the dropped Artifact rows
+aDf = pd.DataFrame(adata.obs)
+
+allArtifacts = roi_df.loc[roi_df['qc'].str.contains("Artifact", na=True), ["roi", 'Centroid X um', 'Centroid Y um']]
+
+allArtifacts.columns = ["imageid", "X_centroid", "Y_centroid"]
+allArtifacts['kmeans'] = 'A'
+allArtifacts['kClusters'] = 0
+allArtifacts['leiden'] = 'A'
+
+
+concatenated_df = pd.concat([aDf, allArtifacts], axis=0, ignore_index=True)
+concatenated_df.to_csv(f"scimap_clusters_{roi}.csv", index=False)
+
 
