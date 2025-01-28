@@ -16,6 +16,7 @@ params.kmeans_metacluster_script = "${projectDir}/scripts/kmeans_metaclustering.
 params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
 params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
+params.anndata_create_script = "${projectDir}/scripts/make_anndata.py"
 
 
 // Load modules
@@ -25,7 +26,7 @@ include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
 
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
 
-include {RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS } from './modules/post_clustering.nf'
+include {RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS; GENERATE_ANNDATA_META4 } from './modules/post_clustering.nf'
 
 
 workflow {
@@ -101,6 +102,16 @@ workflow {
 	     SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
 	    }
 	  }
+	  
+	  
+	  
+	  // -- Merge and Cross Compare all Meta Clusters, if SciMap & Seurat both running -- //
+	  if(params.run_seurat && params.run_scimap && params.run_som){
+	    andt = GENERATE_ANNDATA_META4(params.anndata_create_script, RUNMETACLUSTERSSEURAT.output.metaclusters, RUNSOMCLUSTERS.output.metaclusters, RUNMETACLUSTERSLEIDEN.output.metaclusters, RUNMETACLUSTERSKMEANS.output.metaclusters)
+	    andt.view()
+	    //need to do a 3x version if SOM-Seurat is off?
+	  }
+	  
 	      
 	}
 	  

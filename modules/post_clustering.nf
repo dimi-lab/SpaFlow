@@ -33,7 +33,7 @@ process RUNMETACLUSTERSSEURAT {
   output:
   path "arcsin_zscore_seurat_centroids.csv"
   path "seurat_metacluster_report.html"
-  path "seurat_metaclusters*.csv"
+  path "seurat_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -78,7 +78,7 @@ process RUNMETACLUSTERSLEIDEN {
   output:
   path "arcsin_zscore_leiden_centroids.csv"
   path "leiden_metacluster_report.html"
-  path "leiden_metaclusters*.csv"
+  path "leiden_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -122,7 +122,7 @@ process RUNMETACLUSTERSKMEANS {
   output:
   path "arcsin_zscore_kmeans_centroids.csv"
   path "kmeans_metacluster_report.html"
-  path "kmeans_metaclusters*.csv"
+  path "kmeans_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -161,7 +161,7 @@ process RUNSOMCLUSTERS {
 
   output:
   path "som_metaclusters*.html"
-  path "som_metaclusters*.csv", optional: true
+  path "som_metaclusters*.csv", optional: true, emit: metaclusters
 
   script:
   """
@@ -232,3 +232,33 @@ process SEURATVSCIMAP {
   """
   
 }
+
+
+
+process GENERATE_ANNDATA_META4 {
+  cpus 8
+  memory '24 GB'
+
+  publishDir(
+        path: "${params.output_dir}/output_tables/",
+        pattern: "*.h5ad",
+        mode: "copy"
+  )
+  
+  input:
+  path anndatascript
+  path all_seurat_meta
+  path all_seurat_som
+  path all_leiden_meta
+  path all_kmeans_meta
+  
+  output:
+  path "all_meta_clustering.h5ad"
+
+  """
+  python make_anndata.py
+  """
+
+}
+
+
