@@ -6,70 +6,28 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-library(jsonlite)
 
-roi <- list.files('.', pattern = "^cluster_scores_")
-roi <- sub("cluster_scores_", "", tools::file_path_sans_ext(basename(roi)))
-
-# Load JSON data
-json_file <- paste0("cluster_scores_",roi,".json")
-cluster_scores <- fromJSON(json_file)
+roi <- list.files('.', pattern = "^umap")
+roi <- sub("umap_", "", tools::file_path_sans_ext(basename(roi)))
 ```
 
 ## roi: `r roi`
 
-## KMeans calculation of Optimal Number of Clusters
+## UMAP of clusters
 ```{r results='asis'}
-cat(paste0('<img src="', "optimal_cluster_", roi, ".png", '" width="94%"/><br>')) #### Make all plots larger in report
+cat(paste0('<img src="', "umap_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
 ```
 
-## Image plot of clusters: K-means
+## Image plot of clusters
 ```{r results='asis'}
-cat(paste0('<img src="', "show_kmeans_", roi, ".png", '" width="700"/><br>'))
+cat(paste0('<img src="', "spatialplot_", roi, ".png", '" width="500"/><br>'))
 ```
 
-## UMAP of clusters: K-means
+## Heatmap of clusters
 ```{r results='asis'}
-cat(paste0('<img src="', "umap_kmeans_", roi, ".png", '" width="600"/><br>')) #### Make all plots larger in report
+cat(paste0('<img src="', "matrixplot_", roi, ".png", '"/><br>'))
 ```
 
-## Heatmap of clusters: K-means
-```{r results='asis'}
-cat(paste0('<img src="', "matrixplot_kmeans_", roi, ".png", ' width="94%"/><br>'))
-```
-
----
-
-
-## Image plot of clusters: Leiden
-```{r results='asis'}
-cat(paste0('<img src="', "show_leiden_", roi, ".png", '" width="500"/><br>'))
-```
-
-## UMAP of clusters: Leiden
-```{r results='asis'}
-cat(paste0('<img src="', "umap_leiden_", roi, ".png", '" width="500"/><br>')) #### Make all plots larger in report
-```
-
-## Heatmap of clusters: Leiden
-```{r results='asis'}
-cat(paste0('<img src="', "matrixplot_leiden_", roi, ".png", '"/><br>'))
-```
-
----
-
-### ARI (Adjusted Rand Index): 
-
-Measures clustering similarity by comparing pairs of points. A value of 1 indicates perfect agreement, while 0 means random clustering.
-
-ARI: r cluster_scores$ARI
-
-
-### NMI (Normalized Mutual Information): 
-
-Measures mutual dependence between clusters. Higher values indicate greater similarity.
-
-NMI: r cluster_scores$NMI
 
 
 

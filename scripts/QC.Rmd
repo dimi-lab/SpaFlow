@@ -40,6 +40,7 @@ set.seed(123)
 quantfile <- commandArgs(trailingOnly=T)[1]
 roi <- tools::file_path_sans_ext(basename(quantfile))
 configs_path <- commandArgs(trailingOnly=T)[2]
+filter_column <- commandArgs(trailingOnly=T)[3]
 ```
 
 ```{r}
@@ -76,6 +77,23 @@ if (length(grep("Cell:", colnames(roi_df))) == 0) {
 }
 
 colnames(roi_df) <- sub("\u00B5", "u", colnames(roi_df)) # replace mu with u
+```
+
+Filter out any cells flagged by the user
+```{r}
+# Remove rows, add back later with "Artifact" in qc column
+if(!is.na(filter_column) & filter_column %in% colnames(roi_df)) {
+  bad_rows <- roi_df[roi_df[[filter_column]] == 0,]
+  roi_df <- roi_df[roi_df[[filter_column]] == 1,]
+  bad_rows$sigsum <- NA
+  bad_rows$sigsum_metric <- NA
+  bad_rows$binX <- NA
+  bad_rows$binY <- NA
+  bad_rows$bin_density <- NA
+  bad_rows$low_bin_density <- NA
+  bad_rows$qc <- "Artifact"
+  bad_rows$roi <- roi
+}
 ```
 
 ## Sigsum check
@@ -166,6 +184,9 @@ roi_df$qc[(roi_df$sigsum > sigsum_cutpoint_1) | (roi_df$sigsum < sigsum_cutpoint
 roi_df$qc[roi_df$bin_density <= density_cutoff] <- "Artifact"
 roi_df$roi <- roi
 
+if(!is.na(filter_column) & filter_column %in% colnames(roi_df)) {
+  roi_df <- bind_rows(roi_df, bad_rows)
+}
 
 cols_keep <- c("roi", 
                "sigsum_metric", "sigsum", "qc", "binX", "binY", "bin_density", 

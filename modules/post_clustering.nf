@@ -42,7 +42,7 @@ process RUNMETACLUSTERSSEURAT {
   """
   
 }
-
+ 
 process RUNMETACLUSTERSLEIDEN {
   cpus 8
   memory '24 GB'
