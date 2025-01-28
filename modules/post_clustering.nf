@@ -1,8 +1,6 @@
 process RUNMETACLUSTERSSEURAT {
   cpus 8
   memory '24 GB'
-
-
   publishDir(
         path: "${params.output_dir}/output_reports/seurat_metacluster",
         pattern: "*.html",
@@ -247,10 +245,7 @@ process GENERATE_ANNDATA_META4 {
   
   input:
   path anndatascript
-  path all_seurat_meta
-  path all_seurat_som
-  path all_leiden_meta
-  path all_kmeans_meta
+  tuple val(sample), val(path1), val(path2), val(path3), val(path4), val(path5)
   
   output:
   path "all_meta_clustering.h5ad"
