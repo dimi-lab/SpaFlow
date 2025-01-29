@@ -89,7 +89,6 @@ process RUNMETACLUSTERSKMEANS {
   cpus 8
   memory '24 GB'
 
-
   publishDir(
         path: "${params.output_dir}/output_reports/scimap_metacluster",
         pattern: "*.html",
@@ -169,8 +168,8 @@ process RUNSOMCLUSTERS {
 
 }
 
-
-process SEURATVCELESTA { // This script should output the final cluster files, so the previous ones don't need to output cluster files
+// This script should output the final cluster files, so the previous ones don't need to output cluster files
+process SEURATVCELESTA { 
   cpus 8
   memory '24 GB'
 
@@ -228,7 +227,6 @@ process SEURATVSCIMAP {
   Rscript -e "rmarkdown::render('${seurat_vs_scimap_script}', 
                                 output_file='seurat_vs_scimap_report_${roi}.html')"
   """
-  
 }
 
 
@@ -238,7 +236,7 @@ process GENERATE_ANNDATA_META4 {
   memory '24 GB'
 
   publishDir(
-        path: "${params.output_dir}/output_tables/",
+        path: "${params.output_dir}/output_tables/merged",
         pattern: "*.h5ad",
         mode: "copy"
   )
@@ -248,10 +246,11 @@ process GENERATE_ANNDATA_META4 {
   tuple val(sample), path(path1), path(path2), path(path3), path(path4), path(path5)
   
   output:
-  path "all_meta_clustering_*.h5ad"
+  tuple val(sample), path("all_meta_clustering_${sample}.h5ad"), emit: anndata
 
+  script:
   """
-  python make_anndata.py $sample
+  python make_anndata.py ${sample}
   """
 
 }

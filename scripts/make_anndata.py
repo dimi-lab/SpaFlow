@@ -24,7 +24,7 @@ def clean_headers(df):
 # 1. Load all_markers_clean
 markers_file = glob.glob(f"all_markers_clean_{sample}.csv")[0]  # Ensure only one file is matched
 originaldf = pd.read_csv(markers_file, sep=',', low_memory=False) # changed to comma separated
-all_markers_clean_means = originaldf.filter(like=": Mean") # changed filter to like
+all_markers_clean_means = originaldf.filter(regex=": Mean|: Min") # changed filter to like
 
 originaldf = clean_headers(originaldf)
 all_markers_clean_means = clean_headers(all_markers_clean_means)
