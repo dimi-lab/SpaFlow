@@ -222,7 +222,7 @@ for (i in seq_along(metacluster_range)) {
     meta_mapped <- left_join(single_df, all_metacluster_counts, by = c("cluster" = "cluster", "roi" = "roi")) #%>%
       #select(x, y, roi, seurat_clusters, cluster, metacluster)
     meta_mapped$metacluster[grepl("Artifact", meta_mapped$cluster)] <- "Artifact"
-    colnames(meta_mapped)[colnames(meta_mapped) == "metacluster"] <- paste0("metaclusters_", metacluster_range[i])
+    colnames(meta_mapped)[colnames(meta_mapped) == "metacluster"] <- paste0("seurat_metaclusters_", metacluster_range[i])
     df_list[[basename(j)]] <- meta_mapped
     
   }

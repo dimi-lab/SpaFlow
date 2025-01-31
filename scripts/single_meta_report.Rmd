@@ -1,0 +1,52 @@
+---
+title: "Meta Comparison Clustering Report"
+output: html_document
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+roi <- list.files('.', pattern = "^ranked_clusterings_")
+cluster_scores <- read.csv(roi, header = TRUE)
+
+roi <- sub("ranked_clusterings_", "", tools::file_path_sans_ext(basename(roi)))
+```
+
+## roi: `r roi`
+
+## 
+```{r results='asis'}
+cat(paste0('<img src="', "clustering_ranking_", roi, ".png", '" width="94%"/><br>')) #### Make all plots larger in report
+```
+
+```{r table2, results='asis', message=FALSE}
+cluster_scores <- cluster_scores[order(cluster_scores$Average_Score, decreasing = TRUE), ] # Descending
+knitr::kable(cluster_scores, caption = "Original Score Values") # Create the table
+
+```
+
+
+### What does a high Calinski-Harabasz (CH) index score mean?
+    * A high CH index score indicates that the clusters are well separated and compact 
+    * A high CH index score indicates that the clustering solution has low within variability and high between cluster variability 
+
+### Silhouette Interpretation
+    * High score = A score close to 1 indicates that the data points are well-matched to their cluster and poorly matched to other clusters. 
+    * Zero score = A score close to zero indicates that clusters overlap or that data points are close to multiple clusters. 
+    * Negative score = A score close to -1 indicates that data points are assigned to the wrong cluster. 
+
+### Davies-Bouldin score:
+    * Lower is better: Unlike many metrics, a lower Davies-Bouldin score is desirable, signifying better cluster separation. 
+
+
+## Image plot of Top cluster parameterization
+```{r results='asis'}
+cat(paste0('<img src="', "spatial_highest_score_pointplot_", roi, ".png", '" width="700"/><br>'))
+```
+
+## Heatmap of clusters versus highly correlated features
+```{r results='asis'}
+cat(paste0('<img src="', "heatmap_top_correlations_", roi, ".png", '" width="600"/><br>')) #### Make all plots larger in report
+```
+

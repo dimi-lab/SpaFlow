@@ -13,16 +13,17 @@ params.leiden_metacluster_script = "${projectDir}/scripts/leiden_metaclustering.
 params.kmeans_metacluster_script = "${projectDir}/scripts/kmeans_metaclustering.Rmd"
 params.seurat_vs_celesta_script = "${projectDir}/scripts/seurat_vs_celesta.Rmd"
 params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
-
+params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
+params.anndata_create_script = "${projectDir}/scripts/make_anndata.py"
+params.single_anndata_ranking_script = "${projectDir}/scripts/rank_individual_metaclustering.py"
+params.single_meta_ranking_script = "${projectDir}/scripts/single_meta_report.Rmd"
 
 // Load modules
-include { WRITECONFIGFILE; WRITEMARKERFILE } from './modules/prep_config.nf'
-
+include { WRITECONFIGFILE; WRITEMARKERFILE} from './modules/prep_config.nf'
 include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
-
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
-
-include {RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS } from './modules/post_clustering.nf'
+include { RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS; GENERATE_ANNDATA_META4 } from './modules/post_clustering.nf'
+include { SINGLE_SAMPLE_META_RANKING; SINGLE_SAMPLE_META_RANKING_REPORT } from './modules/meta_summary.nf'
 
 
 workflow {
@@ -37,6 +38,14 @@ workflow {
 	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile, params.filter_column)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
 	COLLECTSIGSUM(params.collect_sigsum_script, RUNQC.output.sigsum.collect())
+	
+	//Create First keyed channel on Input files, by sample
+	SampleKeyedTables = RUNQC.output.all_markers.map { path ->
+            def filename = path.name
+            def matcher = filename =~ /all_markers_clean_(.*)\.csv/
+            def key = matcher ? matcher[0][1] : null
+            [key, path]
+        }
 	
 	// Print a message if there are NAs in the dataset
 	RUNQC.output.NACHECK
@@ -87,9 +96,49 @@ workflow {
 	     SEURATVSCIMAP(params.seurat_vs_scimap_script, combined_output_seurat_scimap)
 	    }
 	  }
-	      
-	}
 	  
+	  
+	  
+	  // -- Merge and Cross Compare all Meta Clusters, if SciMap & Seurat both running -- //
+	  if (params.run_seurat && params.run_scimap && params.run_som) {
+	    ///Change to or statements, and joining seperately...allow for presents/abesnts of method choices...add Celesta too.
+         SeuratMetaKeyed = RUNMETACLUSTERSSEURAT.output.metaclusters.flatMap{it}.map { path ->
+            def filename = path.name
+            def matcher = filename =~ /seurat_metaclusters_(.*)\.csv/
+            def key = matcher ? matcher[0][1] : null
+            [key, path]
+        }
+        SeuratSomKeyed = RUNSOMCLUSTERS.output.metaclusters.flatMap{it}.map { path ->
+            def filename = path.name
+            def matcher = filename =~ /som_metaclusters_(.*)_\d+clusters\.csv/
+            def key = matcher ? matcher[0][1] : null
+            [key, path]
+        }
+        LeidenKeyed = RUNMETACLUSTERSLEIDEN.output.metaclusters.flatMap{it}.map { path ->
+            def filename = path.name
+            def matcher = filename =~ /leiden_metaclusters_(.*)\.csv/
+            def key = matcher ? matcher[0][1] : null
+            [key, path]
+        }
+        KmeansKeyed = RUNMETACLUSTERSKMEANS.output.metaclusters.flatMap{it}.map { path ->
+            def filename = path.name
+            def matcher = filename =~ /kmeans_metaclusters_(.*)\.csv/
+            def key = matcher ? matcher[0][1] : null
+            [key, path]
+        }
+               
+       JoinedAll = SampleKeyedTables.join(SeuratMetaKeyed, by:0).join(SeuratSomKeyed, by:0).join(LeidenKeyed, by:0).join(KmeansKeyed, by:0)
+       JoinedAll.dump(tag: 'JoinedAll', pretty: true)
+
+        // Pass the merged channels into your next process
+        GENERATE_ANNDATA_META4(params.anndata_create_script, JoinedAll)
+        
+        SINGLE_SAMPLE_META_RANKING(params.single_anndata_ranking_script, GENERATE_ANNDATA_META4.output.anndata)
+        
+        SINGLE_SAMPLE_META_RANKING_REPORT(params.single_meta_ranking_script, SINGLE_SAMPLE_META_RANKING.output.ranking, SINGLE_SAMPLE_META_RANKING.output.plots )
+	      
+	  }
+	}
 }
 
 

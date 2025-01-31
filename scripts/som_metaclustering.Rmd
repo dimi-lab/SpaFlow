@@ -2,7 +2,7 @@
 output:
   html_document:
     code_folding: hide
-    df_print: paged 
+    df_print: paged
     geometry: margin=2cm
     highlight: textmate
     theme: journal
@@ -15,13 +15,26 @@ title: "Self-Organizing Maps Metaclustering"
 subtitle: "`r params$som_num_clusters` SOM Metaclusters"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
+
 <style type="text/css">
+body {
+  margin: 0; /* Remove default body margins */
+}
+.banner {
+  width: 100%; /* Full width */
+  display: block; /* Prevents image from having extra space below */
+}
 .main-container {
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+  padding-top: 20px; /* Add some top padding below the banner */
 }
 </style>
+
+<img src="../images/spaflow_banner.png" alt="Banner" class="banner">
+
+<div class="main-container">
 
 ### Summary
 A self-organizing map (SOM) is an unsupervised machine learning technique used to produce a low-dimensional representation of a higher-dimensional data set while preserving the topological structure of the data. 

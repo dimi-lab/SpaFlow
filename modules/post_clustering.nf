@@ -1,8 +1,6 @@
 process RUNMETACLUSTERSSEURAT {
   cpus 8
   memory '24 GB'
-
-
   publishDir(
         path: "${params.output_dir}/output_reports/seurat_metacluster",
         pattern: "*.html",
@@ -33,7 +31,7 @@ process RUNMETACLUSTERSSEURAT {
   output:
   path "arcsin_zscore_seurat_centroids.csv"
   path "seurat_metacluster_report.html"
-  path "seurat_metaclusters*.csv"
+  path "seurat_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -78,7 +76,7 @@ process RUNMETACLUSTERSLEIDEN {
   output:
   path "arcsin_zscore_leiden_centroids.csv"
   path "leiden_metacluster_report.html"
-  path "leiden_metaclusters*.csv"
+  path "leiden_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -90,7 +88,6 @@ process RUNMETACLUSTERSLEIDEN {
 process RUNMETACLUSTERSKMEANS {
   cpus 8
   memory '24 GB'
-
 
   publishDir(
         path: "${params.output_dir}/output_reports/scimap_metacluster",
@@ -122,7 +119,7 @@ process RUNMETACLUSTERSKMEANS {
   output:
   path "arcsin_zscore_kmeans_centroids.csv"
   path "kmeans_metacluster_report.html"
-  path "kmeans_metaclusters*.csv"
+  path "kmeans_metaclusters*.csv", emit: metaclusters
   
   script:
   """
@@ -161,7 +158,7 @@ process RUNSOMCLUSTERS {
 
   output:
   path "som_metaclusters*.html"
-  path "som_metaclusters*.csv", optional: true
+  path "som_metaclusters*.csv", optional: true, emit: metaclusters
 
   script:
   """
@@ -171,8 +168,8 @@ process RUNSOMCLUSTERS {
 
 }
 
-
-process SEURATVCELESTA { // This script should output the final cluster files, so the previous ones don't need to output cluster files
+// This script should output the final cluster files, so the previous ones don't need to output cluster files
+process SEURATVCELESTA { 
   cpus 8
   memory '24 GB'
 
@@ -230,5 +227,32 @@ process SEURATVSCIMAP {
   Rscript -e "rmarkdown::render('${seurat_vs_scimap_script}', 
                                 output_file='seurat_vs_scimap_report_${roi}.html')"
   """
-  
 }
+
+
+
+process GENERATE_ANNDATA_META4 {
+  cpus 8
+  memory '24 GB'
+
+  publishDir(
+        path: "${params.output_dir}/output_tables/merged",
+        pattern: "*.h5ad",
+        mode: "copy"
+  )
+  
+  input:
+  path anndatascript
+  tuple val(sample), path(path1), path(path2), path(path3), path(path4), path(path5)
+  
+  output:
+  tuple val(sample), path("all_meta_clustering_${sample}.h5ad"), emit: anndata
+
+  script:
+  """
+  python make_anndata.py ${sample}
+  """
+
+}
+
+
