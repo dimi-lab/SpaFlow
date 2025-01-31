@@ -63,15 +63,16 @@ workflow {
 	
 	if (!params.qc_only) {
 	    // *** Run Seurat with metaclustering *** //
-	    if (params.run_seurat)	{
+    if (params.run_seurat)	{
 	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    RUNMETACLUSTERSSEURAT(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
 
-		if(params.run_som)  {
-                  somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
-		  RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
-		}
-	    }
+		  if(params.run_som)  {
+		    somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
+		    RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
+		    
+		  }
+    }
       
       
       // *** Run CELESTA *** //
@@ -92,6 +93,7 @@ workflow {
 	      def targetPath = Paths.get(params.celesta_matrix_save_dir, targetFileName)
 	      Files.copy(Paths.get(params.celesta_prior_matrix), targetPath)
 	    }
+	  }
 	
 	  // *** Run Scimap with metaclustering *** //
 	  if (params.run_scimap) {
