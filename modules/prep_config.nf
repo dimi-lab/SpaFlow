@@ -16,6 +16,11 @@ process WRITECONFIGFILE {
   val scimap_resolution
   val min_metaclusters
   val max_metaclusters
+  val som_grid_x
+  val som_grid_y
+  val min_som_clusters
+  val max_som_clusters
+  val globals_maxsize_MB
   
   output:
   path "configs.csv", emit: configfile
@@ -37,6 +42,11 @@ process WRITECONFIGFILE {
   echo "scimap_resolution,!{scimap_resolution}" >> configs.csv
   echo "min_metaclusters,!{min_metaclusters}" >> configs.csv
   echo "max_metaclusters,!{max_metaclusters}" >> configs.csv
+  echo "som_grid_x,!{som_grid_x}" >> configs.csv
+  echo "som_grid_y,!{som_grid_y}" >> configs.csv
+  echo "min_som_clusters,!{min_som_clusters}" >> configs.csv
+  echo "max_som_clusters,!{max_som_clusters}" >> configs.csv
+  echo "globals_maxsize_MB,!{globals_maxsize_MB}" >> configs.csv
   """
 }
 

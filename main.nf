@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+import java.nio.file.*
+
 params.celesta_prior_matrix = "${projectDir}/celesta_prior_matrix.csv"
 params.qcscript = "${projectDir}/scripts/QC.Rmd"
 params.collect_bin_density_script= "${projectDir}/scripts/collect_bin_density.Rmd"
@@ -33,7 +35,8 @@ workflow {
   WRITECONFIGFILE(params.sigsum_quantile_high,params.sigsum_quantile_low,
   params.bin_size,params.density_cutoff,params.cluster_metric,
   params.clustering_res,params.min_clusters,params.min_res,params.max_res,
-  params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters)
+  params.res_step,params.scimap_resolution,params.min_metaclusters,params.max_metaclusters,
+  params.som_grid_x,params.som_grid_y,params.min_som_clusters,params.max_som_clusters,params.globals_maxsize_MB)
   
 	RUNQC(file_ch, params.qcscript, WRITECONFIGFILE.output.configfile, params.filter_column)
 	COLLECTBINDENSITY(params.collect_bin_density_script, RUNQC.output.bin_density.collect())
@@ -59,8 +62,8 @@ workflow {
 
 	
 	if (!params.qc_only) {
-	  if (params.run_seurat)	{
-	    // Run Seurat with metaclustering
+	    // *** Run Seurat with metaclustering *** //
+	    if (params.run_seurat)	{
 	    RUNSEURAT(params.seuratscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    RUNMETACLUSTERSSEURAT(params.seurat_metacluster_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_clusters_noid.collect())
 
@@ -68,20 +71,30 @@ workflow {
                   somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
 		  RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
 		}
-	  
+	    }
+      
+      
+      // *** Run CELESTA *** //
 	  if (params.run_celesta) {
-	    // Run CELESTA
 	    RUNCELESTA(params.celestascript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, params.celesta_prior_matrix)
 	  
 	    if(params.run_seurat) {  	  // combine seurat and CELESTA output for comparison
-  	  combined_output = RUNSEURAT.output.seurat_clusters \
-        | combine(RUNCELESTA.output.celesta_classes, by:0)
+  	    combined_output = RUNSEURAT.output.seurat_clusters \
+          | combine(RUNCELESTA.output.celesta_classes, by:0)
   	  
-  	  SEURATVCELESTA(params.seurat_vs_celesta_script, combined_output)
+  	    SEURATVCELESTA(params.seurat_vs_celesta_script, combined_output)
+	    }
+	    
+	    if(params.save_celesta_matrix) {
+	      def userName = System.getenv("USER")
+	      def dateTime = new Date().format("yyyyMMdd_HHmmss")
+	      def targetFileName = "celesta_matrix_${userName}_${dateTime}.csv"
+	      def targetPath = Paths.get(params.celesta_matrix_save_dir, targetFileName)
+	      Files.copy(Paths.get(params.celesta_prior_matrix), targetPath)
 	    }
 	
+	  // *** Run Scimap with metaclustering *** //
 	  if (params.run_scimap) {
-	    // Run Scimap and build report
 	    RUNSCIMAP(params.scimapscript, RUNQC.output.all_markers, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile)
 	    SCIMAPREPORT(params.scimap_report_script, RUNSCIMAP.output.matrixplot_K, RUNSCIMAP.output.matrixplot_L, RUNSCIMAP.output.optimalplot, \
 	     RUNSCIMAP.output.spatialplot_K, RUNSCIMAP.output.spatialplot_L, RUNSCIMAP.output.umap_K, RUNSCIMAP.output.umap_L, RUNSCIMAP.output.clustermeterics)

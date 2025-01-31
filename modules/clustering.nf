@@ -30,7 +30,7 @@ process RUNSEURAT {
   output:
   path "seurat_report_${roi}.html"
   path "seurat_clusters_${roi}.csv", emit: seurat_clusters_noid
-  path "CLR_seurat_centroids_${roi}.csv"
+  path "CLR_seurat_centroids_${roi}.csv", emit: seurat_centroids
   tuple val(roi), path("seurat_clusters_${roi}.csv") , emit: seurat_clusters
     
   script:
@@ -94,7 +94,6 @@ process RUNSCIMAP {
   path marker_configs
   
   output:
-  path "scimap_clusters_${roi}.csv"
   tuple val(roi), path("scimap_clusters_${roi}.csv") , emit: scimap_clusters
   path "scimap_clusters_${roi}.csv", emit: scimap_clusters_noid
   path "matrixplot_kmeans_${roi}.png", emit: matrixplot_K
@@ -128,18 +127,22 @@ process SCIMAPREPORT {
   
   input:
   path scimap_report_script
-  path matrixplot
-  path spatialplot
-  path umap
-  
+  path matrixplot_K
+  path matrixplot_L
+  path optimalplot
+  path spatialplot_K
+  path spatialplot_L
+  path umap_K
+  path umap_L
+  path clustermeterics
+    
   output:
   path "*.html"
   
   script:
-  roi = umap.baseName.replace("umap_", "")
+  roi = umap_L.baseName.replace("umap_leiden_", "")
   
   """
-  Rscript -e "rmarkdown::render('${scimap_report_script}', 
-                                  output_file='scimap_report_${roi}.html')"
+  Rscript -e "rmarkdown::render('${scimap_report_script}', output_file='scimap_report_${roi}.html')"
   """  
 }

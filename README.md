@@ -1,5 +1,7 @@
 <img src="https://github.com/dimi-lab/mxif_clustering_pipeline/blob/main/images/SpaFlow.png" width="1000"/>
 
+
+
 <img src="https://github.com/dimi-lab/SpaFlow/blob/main/images/Spaflow_metro.png" width="1000"/>
 
 ## Requirements/Dependencies
@@ -20,6 +22,7 @@
     -   pheatmap 1.0.12
     -   plyr 1.8.9
     -   pander 0.6.5
+    -   kohonen 3.0.12
     -   CELESTA 0.0.0.9000
         -   Rmixmod 2.1.9
 
@@ -53,32 +56,36 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
 
 ### Configurable parameters
 
-| Field                | Description                                                                                                                                                                                                                                       |
-|----------------|--------------------------------------------------------|
-| celesta_prior_matrix | Path to CELESTA prior matrix file, if running CELESTA                                                                                                                                                                                             |
-| input_dir            | Path to directory where "output_tables" and "output_figures" directories should be created                                                                                                                                                        |
-| data_pattern         | Regex for file extension of input files; default is to accept both CSV and TSV files.                                                                                                                                                             |
-| output_dir           | Path to directory where output_reports and output_tables directories should be created                                                                                                                                                            |
-| qc_only              | Run only QC steps. It is advised to run the QC alone first and check results before proceeding with clustering analysis.                                                                                                                          |
-| run_scimap           | Run scimap clustering?                                                                                                                                                                                                                            |
-| run_celesta          | Run CELESTA classification?                                                                                                                                                                                                                       |
-| run_seurat           | Run Seurat clustering and metaclustering?                                                                                                                                                                                                         |
+| Field               | Description                                                                                                                                                                                                              |
+|-------------|-----------------------------------------------------------|
+| celesta_prior_matrix | Path to CELESTA prior matrix file, if running CELESTA |
+| input_dir            | Path to directory where "output_tables" and "output_figures" directories should be created |
+| data_pattern         | Regex for file extension of input files; default is to accept both CSV and TSV files. |
+| output_dir           | Path to directory where output_reports and output_tables directories should be created |
+| qc_only              | Run only QC steps. It is advised to run the QC alone first and check results before proceeding with clustering analysis. |
+| run_scimap           | Run scimap clustering?
+| run_celesta          | Run CELESTA classification? |
+| run_seurat           | Run Seurat clustering and metaclustering? |
+| run_som              | Run self-organizing maps (SOM) metaclustering?  |
 | export_intermediates | Create a new directory "intermediates" in your outputs directory, containing the centroids of the seurat clusters from each FOV using the CLR normalization method, and those using the arcsin/Z-score method (AKA the inputs for metaclustering) |
-| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                                                         |
-| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                                                         |
-| bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                                                            |
-| density_cutoff       | Cutoff number of cells defined as low-density (default 5). Higher density cutoff is more stringent (will remove more cells at the same bin size)                                                                                                  |
-| filter_column        | Column name for user-defined artifact exclusion. Add a column to the quantification file with value 1 to indicate keeping a row, or 0 to indicate discarding a row.                                                                               |
-| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                                                                                                                                                              |
-| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. Set to NA or remove row to use clustree method. Larger clustering resolutions will create more clusters.                                |
-| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                                                                                                                                                               |
-| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                                                                                                                                                               |
-| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)                                                                                                                                               |
-| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                                                                                                           |
-| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                                                                                                             |
-| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                                                                                                              |
-| scimap_resolution    | Resolution to be used in scimap’s Leiden clustering function (default 0.5).                                                                                                                                                                       |
-| markers              | Comma-separated list of markers in the dataset that should be used for clustering                                                                                                                                                                 |
+| sigsum_quantile_high | Upper quantile cutoff for sigsum filtering (default 0.99)                                                                                                                                                          |
+| sigsum_quantile_low  | Lower quantile cutoff for sigsum filtering (default 0.05)                                                                                                                                                          |
+| bin_size             | Size of bounding box for low-density cell search (default 50). Smaller bin size is more stringent (will remove more cells at the same density cutoff).                                                             |
+| density_cutoff       | Cutoff number of cells defined as low-density (default 5). Higher density cutoff is more stringent (will remove more cells at the same bin size)                                                                   |
+| cluster_metric       | Metric to use for Seurat clustering (default Median)                                                                                                                                                               |
+| clustering_res       | If specified, this clustering resolution will be used for all ROIs and will override the clustree method. Set to NA or remove row to use clustree method. Larger clustering resolutions will create more clusters. |
+| min_res              | Minimum clustering resolution to search with clustree (default 0.1)                                                                                                                                                |
+| max_res              | Maximum clustering resolution to search with clustree (default 1.9)                                                                                                                                                |
+| res_step             | Increment for searching clustering resolutions; functions as `by` argument in `seq()` (default 0.2)                                                                                                                |
+| min_clusters         | Minimum number of clusters for per-ROI clustering in Seurat (default 6)                                                                                                                                            |
+| min_metaclusters     | Starting number of metaclusters to create (default 5)                                                                                                                                                              |
+| max_metaclusters     | Ending number of metaclusters to create (default 10)                                                                                                                                                               |
+| scimap_resolution    | Resolution to be used in scimap’s Leiden clustering function (default 0.5). |
+| som_grid_x           | X dimention of the grid for the SOM metaclustering (default 4) |
+| som_grid_y           | Y dimention of the grid for the SOM  metaclustering (default 4) |
+| min_som_clusters     | Starting number of SOM metaclusters to create (default 5)
+| max_som_clusters     | Ending number of SOM metaclusters to create (default 10)
+| markers              | Comma-separated list of markers in the dataset that should be used for clustering |
 
 ------------------------------------------------------------------------
 
@@ -105,6 +112,12 @@ Note: This pipeline requires exported QuPath (0.4.3) measurement tables (quantif
     -   Marker vs metacluster heatmaps; barplots for proportion of ROI per metacluster
 -   `output_tables/<roi>_mapped_metaclusters_n_metaclusters.csv`
     -   Clusters and metaclusters mapped to cell coordinates - includes artifacts
+
+**som_metaclustering.Rmd**
+-  `output_reports/som_metacluster/som_metaclusters_<num-of-clusters>_report.html`
+    -   SOM metaclustering output using <num-of-clusters> clusters; SOM grid; Marker vs SOM metaclusters heatmaps
+-  `output_tables/som_metacluster/som_metaclusters_<roi>_<num-of-clusters>clusters.csv`
+    -   Seurat clusters and SOM metaclusters mapped to cell coordinates - includes artifacts
 
 **CELESTA_clustering.Rmd**
 
