@@ -18,13 +18,14 @@ params.seurat_vs_scimap_script = "${projectDir}/scripts/seurat_vs_scimap.Rmd"
 params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
 params.anndata_create_script = "${projectDir}/scripts/make_anndata.py"
 params.single_anndata_ranking_script = "${projectDir}/scripts/rank_individual_metaclustering.py"
+params.single_meta_ranking_script = "${projectDir}/scripts/single_meta_report.Rmd"
 
 // Load modules
 include { WRITECONFIGFILE; WRITEMARKERFILE} from './modules/prep_config.nf'
 include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
 include { RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS; GENERATE_ANNDATA_META4 } from './modules/post_clustering.nf'
-include { SINGLE_SAMPLE_META_RANKING } from './modules/meta_summary.nf'
+include { SINGLE_SAMPLE_META_RANKING; SINGLE_SAMPLE_META_RANKING_REPORT } from './modules/meta_summary.nf'
 
 
 workflow {
@@ -146,6 +147,8 @@ workflow {
         GENERATE_ANNDATA_META4(params.anndata_create_script, JoinedAll)
         
         SINGLE_SAMPLE_META_RANKING(params.single_anndata_ranking_script, GENERATE_ANNDATA_META4.output.anndata)
+        
+        SINGLE_SAMPLE_META_RANKING_REPORT(params.single_meta_ranking_script, SINGLE_SAMPLE_META_RANKING.output.ranking, SINGLE_SAMPLE_META_RANKING.output.plots )
 	      
 	  }
 	}

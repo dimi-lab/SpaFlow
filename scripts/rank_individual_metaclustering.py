@@ -8,15 +8,33 @@ from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.metrics import calinski_harabasz_score, silhouette_score, davies_bouldin_score
 import scanpy as sc
 
+# Settings
+sc.settings.verbosity = 1
+sc.settings.figdir = "./"
+
 sample = sys.argv[1]
 output_pdf_file = f"meta_ranking_{sample}.pdf"
 adata = sc.read_h5ad(f"all_meta_clustering_{sample}.h5ad") # Replace with your file name
-# print(adata)
+feature_to_cluster_correlate_threshold = 4
+
+# What does a high CH index score mean?
+# A high CH index score indicates that the clusters are well separated and compact 
+# A high CH index score indicates that the clustering solution has low within variability and high between cluster variability 
+
+# Silhouette Interpretation
+# High score = A score close to 1 indicates that the data points are well-matched to their cluster and poorly matched to other clusters. 
+# Zero score = A score close to zero indicates that clusters overlap or that data points are close to multiple clusters. 
+# Negative score = A score close to -1 indicates that data points are assigned to the wrong cluster. 
+
+# Davies-Bouldin score:
+# Lower is better: Unlike many metrics, a lower Davies-Bouldin score is desirable, signifying better cluster separation. 
 
 select_data = adata.X
+mean_cols = [i for i, col in enumerate(adata.var_names) if "Mean" in col]
+select_data = select_data[:, mean_cols]
 obs_table = adata.obs
 
- # 1. Split cluster column and drop rows with "A"
+# 1. Split cluster column and drop rows with "A"
 if 'cluster' in obs_table.columns: #check if column exists
     obs_table['cluster_type'] = obs_table['cluster'].str.rsplit('_', 1, expand=True)[1] # added expand=True
     rows_to_drop = obs_table['cluster_type'] == 'A'
@@ -48,9 +66,9 @@ for cl in clust_cols:
 # 3. Rank clusterings (example: based on Calinski-Harabasz)
 ranked_clusterings = sorted(scores.items(), key=lambda item: item[1]["Calinski-Harabasz"] if not np.isnan(item[1]["Calinski-Harabasz"]) else -np.inf, reverse=True) 
 
-print("Ranked Clusterings (Calinski-Harabasz):")
-for cl, metrics in ranked_clusterings:
-    print(f"{cl}: {metrics}")
+#print("Ranked Clusterings (Calinski-Harabasz):")
+#for cl, metrics in ranked_clusterings:
+#    print(f"{cl}: {metrics}")
 
 
 
@@ -66,6 +84,15 @@ for metric in scores[list(scores.keys())[0]].keys():  # Iterate over metrics
         normalized_scores[metric] = {
             cl: (scores[cl][metric] - min_val) / (max_val - min_val) if not np.isnan(scores[cl][metric]) else 0 for cl in scores
         }
+
+## Davies-Bouldin score needs to be inverted to match other scores positive directions
+inverted_scores = normalized_scores['Davies-Bouldin'].copy()
+for cluster, score in inverted_scores.items():
+    if not np.isnan(score): # handle nan values
+        inverted_scores[cluster] = 1 - score
+    else:
+        inverted_scores[cluster] = score # keep nan values as nan
+normalized_scores['Davies-Bouldin'] = inverted_scores
 
 
 #5.  """Calculates the average of normalized scores for each clustering."""
@@ -107,14 +134,11 @@ avg_scores = [average_scores[cl] for cl in cluster_names]
 
 x = np.arange(len(cluster_names))  # the label locations
 width = 0.15  # the width of the bars
-
 fig, ax1 = plt.subplots(figsize=(15, 8))
 ax2 = ax1.twinx()
-
 rects1 = ax1.bar(x - width, ch_scores, width, label='Calinski-Harabasz', color = 'skyblue')
 rects2 = ax1.bar(x, sil_scores, width, label='Silhouette', color = 'lightcoral')
 rects3 = ax1.bar(x + width, db_scores, width, label='Davies-Bouldin', color = 'lightgreen')
-
 rects4 = ax2.plot(x, avg_scores, label='Average Score', color = 'black', marker = 'o')
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
@@ -123,14 +147,90 @@ ax2.set_ylabel('Normalized and Average Score')
 ax1.set_title(f'Clustering Performance - {sample}')
 ax1.set_xticks(x)
 ax1.set_xticklabels(cluster_names, rotation=45, ha = 'right')
-ax1.legend(loc = 'upper left')
+ax1.legend(loc = 'upper center')
 ax2.legend(loc = 'upper right')
 
 fig.tight_layout()
-plt.savefig(f"clustering_ranking_{sample}.png")
-plt.show()
+plt.savefig(f"clustering_ranking_{sample}.png", dpi=300, bbox_inches='tight')
+# plt.show()
+
+# 7. Output metrics:
+data = []
+for cluster_name, metrics in ranked_clusterings:
+    row = metrics.copy()  # Create a copy to avoid modifying the original
+    row['Cluster'] = cluster_name
+    if cluster_name in average_scores: #check if cluster name exists in average scores
+        row['Average_Score'] = average_scores[cluster_name]
+    else:
+        row['Average_Score'] = np.nan # if not, add a nan value
+    data.append(row)
+
+ranked_df = pd.DataFrame(data)
+# Reorder columns (optional, but makes it look nicer)
+cols = ['Cluster', 'Average_Score'] + [col for col in ranked_df.columns if col not in ['Cluster', 'Average_Score']]
+ranked_df = ranked_df[cols]
+ranked_df.to_csv(f"ranked_clusterings_{sample}.csv", index=False)
 
 
+#### Section 2. Keeping top auto cluster...plot visuals
+highest_cluster = max(average_scores, key=average_scores.get)
+print(f"Highest scoring cluster: {highest_cluster}")
 
+if highest_cluster not in adata.obs.columns:
+    print(f"Warning: Cluster column '{highest_cluster}' not found in adata.obs. Skipping spatial plot.")
+
+fig, ax = plt.subplots(figsize=(9, 8))
+try:
+    sc.pl.spatial(adata, color=highest_cluster, ax=ax, show=False, spot_size=10)  # Color by highest scoring cluster
+    ax.set_title(f"Colored by {highest_cluster} - {sample}")
+    plt.savefig(f"spatial_highest_score_pointplot_{sample}.png")
+    # plt.show()
+    plt.close(fig) # close the figure to prevent it from being displayed
+    print(f"Spatial plot saved to spatial_highest_score_{sample}.png")
+except Exception as e:
+    print(f"Error creating spatial plot: {e}")
     
+
+"""Calculates the top N positively correlated features to each cluster."""
+top_labels = obs_table[highest_cluster]
+unique_labels = np.unique(top_labels)
+obs_table.index = obs_table.index.astype(int)  # Convert index to integers
+top_features = {}
+heatmap_data = []
+for label in unique_labels:
+    # Correctly get indices from obs_table
+    ii = obs_table[obs_table[highest_cluster] == label].index.to_numpy()
+    cluster_data = select_data[ii]
+    if cluster_data.shape[0] < 1:
+        continue  # Skip if no data for this cluster
+
+    cluster_mean = np.mean(cluster_data, axis=0)    
+    correlations = np.corrcoef(cluster_data, rowvar=False)[0, 1:] # Correct calculation
+    correlations = np.nan_to_num(correlations)  # Handle NaNs
+    top_indices = np.argsort(correlations)[::-1][:feature_to_cluster_correlate_threshold]
+    top_features[label] = top_indices
+    heatmap_data.append(cluster_mean)
+
+print(top_features)
+
+"""Generates a heatmap of the top features vs. the clusters."""
+all_top_features = np.unique(np.concatenate(list(top_features.values())).flatten())
+allVarMeanNames = adata.var_names[mean_cols]
+
+heatmap_df = pd.DataFrame(heatmap_data, index=unique_labels, columns=allVarMeanNames) # create dataframe for the heatmap
+namedTopFeatures = allVarMeanNames[ all_top_features ]
+heatmap_df = heatmap_df[namedTopFeatures]
+
+plt.figure(figsize=(10, 12))
+sns.heatmap(heatmap_df, cmap="vlag", annot=True) # plot heatmap
+plt.title(f"Heatmap of Top Correlated Features")
+plt.xlabel("Top Correlated Features")
+plt.xticks(rotation=25, ha='right')  # Rotate x-axis labels
+plt.ylabel(highest_cluster)
+plt.savefig(f"heatmap_top_correlations_{sample}.png")
+#plt.show()
+
+
+#### Section #3. Dig into overly expressed Min values?   ####
+
 
