@@ -19,12 +19,13 @@ params.som_clustering_script = "${projectDir}/scripts/som_metaclustering.Rmd"
 params.anndata_create_script = "${projectDir}/scripts/make_anndata.py"
 params.single_anndata_ranking_script = "${projectDir}/scripts/rank_individual_metaclustering.py"
 params.single_meta_ranking_script = "${projectDir}/scripts/single_meta_report.Rmd"
+params.som_tables_script = "${projectDir}/scripts/make_som_tables.R"
 
 // Load modules
 include { WRITECONFIGFILE; WRITEMARKERFILE} from './modules/prep_config.nf'
 include { RUNQC; COLLECTBINDENSITY; COLLECTSIGSUM } from './modules/qc.nf'
 include { RUNSEURAT; RUNCELESTA; RUNSCIMAP; SCIMAPREPORT } from './modules/clustering.nf'
-include { RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS; GENERATE_ANNDATA_META4 } from './modules/post_clustering.nf'
+include { RUNMETACLUSTERSSEURAT; RUNMETACLUSTERSLEIDEN; RUNMETACLUSTERSKMEANS; SEURATVCELESTA; SEURATVSCIMAP; RUNSOMCLUSTERS; GENERATE_ANNDATA_META4; GENERATE_SOM_TABLES } from './modules/post_clustering.nf'
 include { SINGLE_SAMPLE_META_RANKING; SINGLE_SAMPLE_META_RANKING_REPORT } from './modules/meta_summary.nf'
 
 
@@ -70,7 +71,7 @@ workflow {
 		  if(params.run_som)  {
 		    somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
 		    RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
-		    
+		    GENERATE_SOM_TABLES(params.som_tables_script, RUNSOMCLUSTERS.output.metaclusters.collect())
 		  }
     }
       

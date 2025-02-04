@@ -140,12 +140,6 @@ process RUNSOMCLUSTERS {
         mode: "copy"
   )
 
-  publishDir(
-        path: "${params.output_dir}/output_tables/som_metacluster",
-        pattern: "som_metaclusters*.csv",
-        mode: "copy"
-  )
-
   input:
   path seurat_som_script
   path configs
@@ -166,6 +160,27 @@ process RUNSOMCLUSTERS {
                                 output_file='som_metaclusters_${num_clusters}_report.html')"
   """
 
+}
+
+process GENERATE_SOM_TABLES {
+  publishDir(
+        path: "${params.output_dir}/output_tables/som_metacluster",
+        pattern: "som_metaclusters*.csv",
+        mode: "copy"
+  )
+  
+  input:
+  path som_tables_script
+  path som_metaclusters
+  
+  output:
+  path "som_metaclusters*.csv"
+  
+  script:
+  """
+  Rscript ${som_tables_script}
+  """
+  
 }
 
 // This script should output the final cluster files, so the previous ones don't need to output cluster files
