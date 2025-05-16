@@ -31,7 +31,7 @@ myProject.getImageList().each{
     println(imgName+" calX="+calibx+" CalY="+caliby)
     
     // Modify according to file naming pattern for clusters
-    def prefFH = new File(predDir + "\\seurat_clusters_" + imgName +".csv" )
+    def prefFH = new File(predDir + "/seurat_clusters_" + imgName +".csv" )
     if( prefFH.exists() ){
             println("Have Predictions for : "+imgName)
     } else {
