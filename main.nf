@@ -20,6 +20,7 @@ params.anndata_create_script = "${projectDir}/scripts/make_anndata.py"
 params.single_anndata_ranking_script = "${projectDir}/scripts/rank_individual_metaclustering.py"
 params.single_meta_ranking_script = "${projectDir}/scripts/single_meta_report.Rmd"
 params.som_tables_script = "${projectDir}/scripts/make_som_tables.R"
+params.spaflow_banner = "${projectDir}/images/spaflow_banner.png"
 
 // Load modules
 include { WRITECONFIGFILE; WRITEMARKERFILE} from './modules/prep_config.nf'
@@ -70,7 +71,7 @@ workflow {
 
 		  if(params.run_som)  {
 		    somSplitList = Channel.from(params.min_som_clusters..params.max_som_clusters)
-		    RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList)
+		    RUNSOMCLUSTERS(params.som_clustering_script, WRITECONFIGFILE.output.configfile, WRITEMARKERFILE.output.markerconfigfile, RUNQC.output.all_markers.collect(), RUNSEURAT.output.seurat_centroids.collect(), RUNSEURAT.output.seurat_clusters_noid.collect(), somSplitList, params.spaflow_banner)
 		    GENERATE_SOM_TABLES(params.som_tables_script, RUNSOMCLUSTERS.output.metaclusters.collect())
 		  }
     }

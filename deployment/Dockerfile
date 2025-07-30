@@ -30,7 +30,7 @@ RUN update-alternatives --remove python /usr/bin/python2
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 10
 
 # Python Packages
-RUN python -m pip install 'scimap==1.3.2' 'anndata==0.7.8' 'pandas==1.5.3' 'scanpy==1.9.6'
+RUN python -m pip install 'scimap==1.3.2' 'anndata==0.7.8' 'pandas==1.5.3' 'scanpy==1.9.6' 'kneed'
 
 # Install Nextflow
 RUN curl -s https://get.nextflow.io | bash && \
@@ -60,6 +60,7 @@ RUN R --quiet -e "install.packages('Matrix')"
 
 RUN R --quiet -e "install.packages('remotes')"
 RUN R --quiet -e "remotes::install_github('plevritis-lab/CELESTA')"
+RUN R --quiet -e "install.packages('kohonen')"
 
 # Cleanup to reduce image size
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -73,3 +74,4 @@ COPY scripts/ /app/scripts
 COPY main.nf /app/main.nf
 COPY nextflow.config /app/nextflow.config
 COPY celesta_prior_matrix.csv /app/celesta_prior_matrix.csv
+COPY images/ /app/images

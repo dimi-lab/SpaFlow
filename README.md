@@ -25,17 +25,16 @@
     -   kohonen 3.0.12
     -   CELESTA 0.0.0.9000
         -   Rmixmod 2.1.9
-
         -   spdep 1.3-3
-
         -   reshape2 1.4.4
-
         -   zeallot 0.1.0
+    -   kohonen
 -   Python 3.8
     -   scimap 1.3.2
     -   anndata 0.7.8
     -   pandas 1.5.3
     -   scanpy 1.9.6
+    -   kneed
 
 ------------------------------------------------------------------------
 

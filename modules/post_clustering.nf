@@ -148,6 +148,7 @@ process RUNSOMCLUSTERS {
   path allcentroids_collected
   path seurat_clusters_noid_collected
   val num_clusters
+  path spaflow_banner
   
 
   output:

@@ -32,7 +32,7 @@ body {
 }
 </style>
 
-<img src="../images/spaflow_banner.png" alt="Banner" class="banner">
+<img src="spaflow_banner.png" alt="Banner" class="banner">
 
 <div class="main-container">
 
