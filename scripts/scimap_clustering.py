@@ -24,7 +24,7 @@ sc.settings.figdir = "./"
 # Constants
 MIN_K = 3
 MAX_K = 26
-desired_k_method = "Calinski-Harabasz Score"
+desired_k_method = "Elbow"
 
 # Load configurations
 marker_configs = pd.read_csv("marker_configs.csv")
@@ -32,6 +32,7 @@ marker_subset = marker_configs['marker'].tolist()
 
 configs = pd.read_csv("configs.csv")
 clustering_res = float(configs.loc[configs['object'] == "scimap_resolution", 'value'].item())
+cluster_metric = configs.loc[configs['object'] == "cluster_metric", 'value'].item()
 
 # Load ROI data
 roi_path = [x for x in os.listdir() if x.startswith("all_markers_clean")][0]
@@ -40,8 +41,8 @@ roi = os.path.splitext(roi_path.replace("all_markers_clean_", ""))[0]
 
 # Preprocess data
 no_bad = roi_df[~roi_df['qc'].str.contains("Artifact", na=False)]
-single_vars = no_bad.filter(regex='(Cell: Median)', axis=1)
-single_vars.columns = single_vars.columns.str.replace(": Cell: Median", "")
+single_vars = no_bad.filter(regex=f'(Cell: {cluster_metric})', axis=1)
+single_vars.columns = single_vars.columns.str.replace(f": Cell: {cluster_metric}", "")
 single_vars = single_vars.filter(regex='^(?!DAPI).')
 
 # Check marker compatibility
