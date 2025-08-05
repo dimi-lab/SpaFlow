@@ -91,7 +91,7 @@ get_normalized_counts <- function(roi_allmarkers) {
   counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"), "imageid" = "roi")
   counts <- counts %>% select(imageid, all_of(setdiff(colnames(.), "imageid"))) %>% select(-contains("DAPI"))
 
-  cols <- grep("Mean", colnames(counts), value = T)
+  cols <- grep(cluster_metric, colnames(counts), value = T)
 
   for (j in cols) set(counts, j = j, value = arcsine_transform(counts[[j]]))
   for (j in cols) set(counts, j = j, value = zscorenorm(counts[[j]]))
@@ -101,20 +101,20 @@ get_normalized_counts <- function(roi_allmarkers) {
 
 ## join clusters and quant data
 get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
- normcounts <- get_normalized_counts(roi_allmarkers)
- clusters <- fread(roi_clusters) %>%
-   rename("x" = "X_centroid", "y" = "Y_centroid")
- imageid <- clusters$imageid[1]
- 
- cluster_medians <- 
-   inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
-   filter(kmeans != "Artifact") %>%
-   select(x, y, imageid, kmeans, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>% 
-   group_by(kmeans) %>% 
-   summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
-   mutate(kmeans = paste0(imageid, "_", kmeans), imageid = imageid)
- 
- data.frame(cluster_medians, check.names = F)
+  normcounts <- get_normalized_counts(roi_allmarkers)
+  clusters <- fread(roi_clusters) %>%
+    rename("x" = "X_centroid", "y" = "Y_centroid")
+  imageid <- clusters$imageid[1]
+  
+  cluster_medians <- 
+    inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
+    filter(kmeans != "Artifact") %>%
+    select(x, y, imageid, kmeans, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>% 
+    group_by(kmeans) %>% 
+    summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
+    mutate(kmeans = paste0(imageid, "_", kmeans), imageid = imageid)
+  
+  data.frame(cluster_medians, check.names = F)
 }
 
 make_heatmap <- function(dat, n_metaclusters) {

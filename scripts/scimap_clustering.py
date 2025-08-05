@@ -24,7 +24,7 @@ sc.settings.figdir = "./"
 # Constants
 MIN_K = 3
 MAX_K = 26
-desired_k_method = "Elbow"
+desired_k_method = "Calinski-Harabasz Score"
 
 # Load configurations
 marker_configs = pd.read_csv("marker_configs.csv")

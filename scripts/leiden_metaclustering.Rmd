@@ -101,22 +101,21 @@ get_normalized_counts <- function(roi_allmarkers) {
 
 ## join clusters and quant data
 get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
- normcounts <- get_normalized_counts(roi_allmarkers)
- clusters <- fread(roi_clusters) %>%
-   rename("x" = "X_centroid", "y" = "Y_centroid")
- imageid <- clusters$imageid[1]
- 
- cluster_medians <- 
-   inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
-   filter(leiden != "Artifact") %>%
-   select(x, y, imageid, leiden, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>% 
-   group_by(leiden) %>% 
-   summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
-   mutate(leiden = paste0(imageid, "_", leiden), imageid = imageid)
- 
- data.frame(cluster_medians, check.names = F)
+  normcounts <- get_normalized_counts(roi_allmarkers)
+  clusters <- fread(roi_clusters) %>%
+    rename("x" = "X_centroid", "y" = "Y_centroid")
+  imageid <- clusters$imageid[1]
+  
+  cluster_medians <- 
+    inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
+    filter(kmeans != "Artifact") %>%
+    select(x, y, imageid, kmeans, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>%  
+    group_by(kmeans) %>% 
+    summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
+    mutate(kmeans = paste0(imageid, "_", kmeans), imageid = imageid)
+  
+  data.frame(cluster_medians, check.names = F)
 }
-
 make_heatmap <- function(dat, n_metaclusters) {
   smSub <- dat %>%
     mutate_all(funs(replace(., is.na(.), 0))) %>%

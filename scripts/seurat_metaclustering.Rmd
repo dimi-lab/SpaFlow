@@ -91,7 +91,7 @@ get_normalized_counts <- function(roi_allmarkers) {
   counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"))
   counts <- counts %>% select(roi, all_of(setdiff(colnames(.), "roi"))) %>% select(-contains("DAPI"))
 
-  cols <- grep("Mean", colnames(counts), value = T)
+  cols <- grep(cluster_metric, colnames(counts), value = T)
 
   for (j in cols) set(counts, j = j, value = arcsine_transform(counts[[j]]))
   for (j in cols) set(counts, j = j, value = zscorenorm(counts[[j]]))
@@ -105,15 +105,15 @@ get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
   clusters <- fread(roi_clusters)
   roi <- clusters$roi[1]
   
-cluster_medians <- 
-   inner_join(clusters, normcounts, by = c("x", "y", "roi")) %>% 
-   filter(seurat_clusters != "Artifact") %>%
-   select(x, y, roi, seurat_clusters, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>% 
-   group_by(seurat_clusters) %>% 
-   summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
-   mutate(seurat_clusters = paste0(roi, "_", seurat_clusters), roi = roi)
- 
- data.frame(cluster_medians, check.names = F)
+  cluster_medians <- 
+    inner_join(clusters, normcounts, by = c("x", "y", "roi")) %>% 
+    filter(seurat_clusters != "Artifact") %>%
+    select(x, y, roi, seurat_clusters, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>% 
+    group_by(seurat_clusters) %>% 
+    summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
+    mutate(seurat_clusters = paste0(roi, "_", seurat_clusters), roi = roi)
+  
+  data.frame(cluster_medians, check.names = F)
 }
 
 make_heatmap <- function(dat, n_metaclusters) {
