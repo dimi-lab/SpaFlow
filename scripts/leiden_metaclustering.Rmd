@@ -91,7 +91,7 @@ get_normalized_counts <- function(roi_allmarkers) {
   counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"), "imageid" = "roi")
   counts <- counts %>% select(imageid, all_of(setdiff(colnames(.), "imageid"))) %>% select(-contains("DAPI"))
 
-  cols <- grep("Mean", colnames(counts), value = T)
+  cols <- grep(cluster_metric, colnames(counts), value = T)
 
   for (j in cols) set(counts, j = j, value = arcsine_transform(counts[[j]]))
   for (j in cols) set(counts, j = j, value = zscorenorm(counts[[j]]))
