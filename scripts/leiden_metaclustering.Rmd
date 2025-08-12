@@ -56,6 +56,7 @@ roi_df <- fread(allmarker_files[1])
 min_metaclusters <- as.numeric(configs$value[configs$object == "min_metaclusters"])
 max_metaclusters <- as.numeric(configs$value[configs$object == "max_metaclusters"])
 metacluster_range <- min_metaclusters:max_metaclusters
+cluster_metric <- configs$value[configs$object == "cluster_metric"]
 
 # Default marker set
 default_markers <- c("CD20", "FOXP3", "CD8", "CD4", "Ecad", "CD3e", "CD68", "CD45", "CD14", "CD31")
@@ -66,7 +67,7 @@ if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(
 } else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- default_markers
 } else {
-  markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
+  markers_selected <- sapply(grep(cluster_metric, colnames(roi_df), value = T), function(x) sub(paste0(": Cell: ", cluster_metric), "", x))
   markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
 }
 markers_selected <- markers_selected[markers_selected != ""]
@@ -90,7 +91,7 @@ get_normalized_counts <- function(roi_allmarkers) {
   counts <- counts %>% rename("x" = matches("Centroid X"), "y" = matches("Centroid Y"), "imageid" = "roi")
   counts <- counts %>% select(imageid, all_of(setdiff(colnames(.), "imageid"))) %>% select(-contains("DAPI"))
 
-  cols <- grep("Median", colnames(counts), value = T)
+  cols <- grep(cluster_metric, colnames(counts), value = T)
 
   for (j in cols) set(counts, j = j, value = arcsine_transform(counts[[j]]))
   for (j in cols) set(counts, j = j, value = zscorenorm(counts[[j]]))
@@ -108,14 +109,13 @@ get_normalized_cluster_summary <- function(roi_allmarkers, roi_clusters) {
   cluster_medians <- 
     inner_join(clusters, normcounts, by = c("x", "y", "imageid")) %>% 
     filter(leiden != "Artifact") %>%
-    select(x, y, imageid, leiden, all_of(paste0(markers_selected, ": Cell: Median"))) %>% 
+    select(x, y, imageid, leiden, all_of(paste0(markers_selected, ": Cell: ", cluster_metric))) %>%  
     group_by(leiden) %>% 
-    summarise_at(paste0(markers_selected, ": Cell: Median"), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
+    summarise_at(paste0(markers_selected, ": Cell: ", cluster_metric), list(mean = mean, median = median, sd = sd), na.rm = T) %>%
     mutate(leiden = paste0(imageid, "_", leiden), imageid = imageid)
   
   data.frame(cluster_medians, check.names = F)
 }
-
 make_heatmap <- function(dat, n_metaclusters) {
   smSub <- dat %>%
     mutate_all(funs(replace(., is.na(.), 0))) %>%
@@ -160,8 +160,9 @@ all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(
 centroids_out <- all_normalized_cluster_summaries %>% select(-imageid)
 fwrite(centroids_out, "arcsin_zscore_leiden_centroids.csv")
 
-all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(!contains("sd") & !contains("mean"))
-colnames(all_normalized_cluster_summaries) <- sapply(colnames(all_normalized_cluster_summaries), function(x) sub("_median", "", x))
+metric_to_exclude <- ifelse(cluster_metric == "Median", "mean", "median")
+all_normalized_cluster_summaries <- all_normalized_cluster_summaries %>% select(!contains("sd") & !contains(metric_to_exclude))
+colnames(all_normalized_cluster_summaries) <- sapply(colnames(all_normalized_cluster_summaries), function(x) sub(paste0("_", tolower(cluster_metric)), "", x))
 ```
 
 ```{r}

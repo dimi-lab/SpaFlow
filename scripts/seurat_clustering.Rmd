@@ -80,7 +80,7 @@ if(nrow(marker_configs) > 0 & all(sapply(marker_configs$marker, function(x) any(
 } else if (all(sapply(default_markers, function(x) any(grepl(x, colnames(roi_df)))))) {
   markers_selected <- default_markers
 } else {
-  markers_selected <- sapply(grep("Median", colnames(roi_df), value = T), function(x) sub(": Cell: Median", "", x))
+  markers_selected <- sapply(grep(cluster_metric, colnames(roi_df), value = T), function(x) sub(paste0(": Cell: ", cluster_metric), "", x))
   markers_selected <- markers_selected[!grepl("DAPI", markers_selected)]
 }
 
